@@ -134,6 +134,24 @@ Needs **32-bit Python** — the vendor DLL is 32-bit x86 and a 64-bit interprete
 fails with `WinError 193`. Leave the window open while using BioAttend, and
 close `fpdemo.exe` first: only one program can hold the reader.
 
+### Allowing the site to reach the bridge
+
+The deployed site is served over HTTPS while the bridge runs on `127.0.0.1`.
+Chrome asks once per site whether it may reach the local machine, and
+**remembers a refusal** — after which every call fails with:
+
+```
+blocked by CORS policy: Permission was denied for this request
+to access the `loopback` address space
+```
+
+Grant it at: address bar icon → *Site settings* → **Apps on device**
+(also labelled *Local network access*) → on, then reload.
+
+This is required **once per kiosk machine** and does not transfer between them.
+A new kiosk will appear broken until it is granted, so it belongs on the
+deployment checklist.
+
 ## Database conventions — do not break these
 
 Every table follows the same four steps **in one migration**:

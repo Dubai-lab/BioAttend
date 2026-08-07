@@ -110,10 +110,27 @@ export function Devices() {
       </header>
 
       {bridgeOnline === false && (
-        <Callout tone="danger" icon={ServerCrash} title="Fingerprint bridge is not running" className="mb-6">
-          The reader is a USB mass-storage device, so the browser cannot reach it
-          directly. Start <span className="id-text">bridge/run-bridge.bat</span> and
-          leave that window open.
+        <Callout tone="danger" icon={ServerCrash} title="Fingerprint bridge is not reachable" className="mb-6">
+          <span className="block">
+            The reader is a USB mass-storage device, so the browser cannot reach it
+            directly. Two things to check:
+          </span>
+          <span className="mt-2 block">
+            <strong>1.</strong> Start <span className="id-text">bridge/run-bridge.bat</span>{' '}
+            and leave that window open.
+          </span>
+          {/*
+            Chrome asks once per site whether it may reach the local machine, and
+            remembers a refusal. A blocked prompt looks identical to a stopped
+            bridge, so both causes are named here rather than leaving the next
+            operator to guess.
+          */}
+          <span className="mt-1 block">
+            <strong>2.</strong> Allow this site to reach your computer. Click the icon
+            at the left of the address bar → <em>Site settings</em> → turn on{' '}
+            <em>Apps on device</em> (also called <em>Local network access</em>), then
+            reload. This is asked once per machine.
+          </span>
         </Callout>
       )}
 
