@@ -1,0 +1,129 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   BioAttend Design Tokens
+   One visual identity, two densities:
+     - Console (Admin/Supervisor): dense, read at ~50cm
+     - Kiosk (staff check-in):     sparse, read at ~2m
+   ============================================================ */
+
+@theme {
+  /* --- Brand: deep teal --- */
+  --color-brand-50: #eefbf8;
+  --color-brand-100: #d5f5ee;
+  --color-brand-200: #aeeade;
+  --color-brand-300: #79d8c9;
+  --color-brand-400: #43bdaf;
+  --color-brand-500: #1fa295;
+  --color-brand-600: #12827a;
+  --color-brand-700: #116862;
+  --color-brand-800: #125350;
+  --color-brand-900: #124543;
+  --color-brand-950: #04292a;
+
+  /* --- Sidebar / dark surfaces --- */
+  --color-shell-800: #0f3038;
+  --color-shell-900: #0a2229;
+  --color-shell-950: #06181d;
+
+  /* --- Semantic: always paired with an icon or text label,
+         never colour alone (colour-blind safety) --- */
+  --color-success-50: #ecfdf3;
+  --color-success-500: #12b76a;
+  --color-success-700: #027a48;
+
+  --color-warn-50: #fffaeb;
+  --color-warn-500: #f79009;
+  --color-warn-700: #b54708;
+
+  --color-danger-50: #fef3f2;
+  --color-danger-500: #f04438;
+  --color-danger-700: #b42318;
+
+  --color-info-50: #eff8ff;
+  --color-info-500: #2e90fa;
+  --color-info-700: #175cd3;
+
+  /* --- Type --- */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+
+  /* Kiosk scale — readable from 2 metres */
+  --text-kiosk-sm: 1.5rem;
+  --text-kiosk-md: 2.5rem;
+  --text-kiosk-lg: 4rem;
+  --text-kiosk-xl: 6rem;
+
+  /* --- Radius --- */
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+@layer base {
+  * {
+    border-color: theme('colors.slate.200');
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 font-sans antialiased;
+  }
+
+  /* Identifiers (staff no., device id, firmware) are always monospace
+     so digits align and misreads are less likely. */
+  .id-text {
+    @apply font-mono tracking-tight;
+  }
+
+  /* Muted text must still clear WCAG AA 4.5:1 on white.
+     slate-500 = 4.6:1. Do not go lighter than this. */
+  .text-muted {
+    @apply text-slate-500;
+  }
+
+  /* Visible focus for keyboard users — never remove without replacing. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+}
+
+/* ============================================================
+   Kiosk mode
+   Full-screen, no chrome, glanceable. Applied to <body> on
+   kiosk routes only.
+   ============================================================ */
+
+@layer components {
+  .kiosk-root {
+    @apply min-h-screen w-full flex flex-col items-center justify-center
+           bg-shell-950 text-white select-none cursor-none;
+  }
+
+  .kiosk-headline {
+    font-size: var(--text-kiosk-lg);
+    @apply font-semibold tracking-tight text-center leading-none;
+  }
+
+  .kiosk-subhead {
+    font-size: var(--text-kiosk-sm);
+    @apply text-center text-slate-300;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72">
+  <!--
+    Northcrest General shield, as the browser tab icon.
+
+    Drawn slightly heavier than the sidebar mark: at 16x16 the chevron and the
+    cross arms would otherwise disappear. Favicons are read at a glance, so the
+    silhouette matters more than fidelity to the full-size lockup.
+  -->
+  <path
+    d="M32 2 L60 12 V38 C60 54.5 47.5 65.5 32 70 C16.5 65.5 4 54.5 4 38 V12 Z"
+    fill="#0f3038" />
+  <path d="M4 12 L32 2 L60 12 V22 L32 11 L4 22 Z" fill="#43bdaf" />
+  <rect x="26" y="25" width="12" height="32" rx="1.5" fill="#ffffff" />
+  <rect x="16" y="35" width="32" height="12" rx="1.5" fill="#ffffff" />
+</svg>

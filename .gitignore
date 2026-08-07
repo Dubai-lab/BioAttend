@@ -1,0 +1,51 @@
+# --- Secrets: never commit ---
+.env
+.env.local
+.env.*.local
+
+# --- Dependencies ---
+node_modules/
+
+# --- Build output ---
+dist/
+dist-ssr/
+build/
+*.local
+*.tsbuildinfo
+
+# --- Vendor SDK (large binaries, not part of the app build) ---
+SDK/
+
+# --- Face recognition model weights (pulled via npm script) ---
+public/models/
+
+# --- Local tooling config (contains machine-specific paths) ---
+.claude/
+
+# --- Editor / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Supabase local ---
+supabase/.branches/
+supabase/.temp/
+
+# --- Python bytecode ---
+__pycache__/
+*.pyc
