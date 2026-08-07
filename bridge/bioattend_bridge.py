@@ -34,11 +34,31 @@ from zaz import BUFFER_A, BUFFER_B, ZazError, ZazReader
 HOST = "127.0.0.1"
 PORT = 8321
 
+# Origins permitted to call this bridge.
+#
+# Add your deployed site here. The bridge runs on the kiosk PC while the page
+# is served from Vercel, so the browser treats every call as cross-origin and
+# will block it unless the origin is listed.
 ALLOWED_ORIGINS = {
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4173",
+    # --- deployed site: replace with your own Vercel domain ---
+    "https://bio-attend.vercel.app",
 }
+
+# Vercel gives every deployment its own preview URL. Rather than listing them
+# individually, any https origin under these suffixes is accepted.
+ALLOWED_ORIGIN_SUFFIXES = (".vercel.app",)
+
+
+def origin_allowed(origin: str) -> bool:
+    if origin in ALLOWED_ORIGINS:
+        return True
+    if not origin.startswith("https://"):
+        return False
+    host = origin[len("https://"):]
+    return host.endswith(ALLOWED_ORIGIN_SUFFIXES)
 
 # Device type 2 = USB mass-storage transport, confirmed against this hardware
 # (LIROX, sensor 781102). Set to None to re-run discovery on a different unit.
@@ -230,10 +250,20 @@ class Handler(BaseHTTPRequestHandler):
 
     def _cors(self) -> None:
         origin = self.headers.get("Origin", "")
-        if origin in ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Access-Control-Allow-Headers", "Content-Type")
-            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        if not origin_allowed(origin):
+            return
+
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
+        # Chrome's Private Network Access rules: a page on the public internet
+        # reaching a server on the local network must be explicitly permitted
+        # by that server, or the request is blocked before it is sent. Without
+        # this header the bridge is unreachable from the deployed site even
+        # though it answers fine from localhost.
+        if self.headers.get("Access-Control-Request-Private-Network") == "true":
+            self.send_header("Access-Control-Allow-Private-Network", "true")
 
     def _respond(self, status: int, payload: dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
