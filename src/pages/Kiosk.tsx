@@ -13,6 +13,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { bridge, BridgeOfflineError } from '@/lib/fingerprint/bridge'
 import { staffForSlot } from '@/lib/fingerprint/sync'
+import { Logo } from '@/components/brand/Logo'
 import {
   describeFaceFailure,
   identifyByFace,
@@ -367,10 +368,7 @@ export function Kiosk() {
       </div>
 
       <div className="absolute left-8 top-6">
-        <p className="text-sm font-medium text-slate-300">BioAttend</p>
-        <p className="text-xs uppercase tracking-wider text-slate-500">
-          Northcrest General
-        </p>
+        <Logo tone="light" size="sm" />
       </div>
 
       {/* The camera runs but is not shown: a live self-view at a check-in

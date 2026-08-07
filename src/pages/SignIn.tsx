@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Fingerprint, Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
+import { Logo } from '@/components/brand/Logo'
 import { useAuth } from '@/lib/auth-context'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
 
@@ -47,15 +48,7 @@ export function SignIn() {
       {/* Brand panel */}
       <div className="hidden flex-1 flex-col justify-between bg-shell-900 p-12 lg:flex">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-brand-500 text-white">
-            <Fingerprint className="size-6" aria-hidden="true" />
-          </div>
-          <div className="leading-tight">
-            <p className="text-lg font-semibold text-white">BioAttend</p>
-            <p className="text-xs uppercase tracking-wider text-slate-400">
-              Northcrest General
-            </p>
-          </div>
+          <Logo tone="light" />
         </div>
 
         <div className="max-w-md">
@@ -78,11 +71,10 @@ export function SignIn() {
       {/* Form panel */}
       <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
         <div className="w-full max-w-sm">
+          {/* Shown only when the dark brand panel is hidden on narrow screens,
+              so this one sits on a light surface and takes the dark treatment. */}
           <div className="mb-8 lg:hidden">
-            <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-brand-500 text-white">
-              <Fingerprint className="size-6" aria-hidden="true" />
-            </div>
-            <p className="text-lg font-semibold">BioAttend</p>
+            <Logo tone="dark" />
           </div>
 
           <h2 className="text-2xl font-semibold text-slate-900">Sign in</h2>

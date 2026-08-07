@@ -1,4 +1,4 @@
-import { Fingerprint } from 'lucide-react'
+import { ShieldMark } from '@/components/brand/Logo'
 
 export function LoadingScreen({ message = 'Loading…' }: { message?: string }) {
   return (
@@ -7,9 +7,7 @@ export function LoadingScreen({ message = 'Loading…' }: { message?: string }) 
       role="status"
       aria-live="polite"
     >
-      <div className="flex size-12 animate-pulse items-center justify-center rounded-xl bg-brand-500 text-white">
-        <Fingerprint className="size-6" aria-hidden="true" />
-      </div>
+      <ShieldMark className="h-12 animate-pulse" />
       <p className="text-sm text-muted">{message}</p>
     </div>
   )
