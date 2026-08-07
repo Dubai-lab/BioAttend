@@ -43,8 +43,8 @@ ALLOWED_ORIGINS = {
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4173",
-    # --- deployed site: replace with your own Vercel domain ---
-    "https://bio-attend.vercel.app",
+    # --- deployed site ---
+    "https://bio-attend-one.vercel.app",
 }
 
 # Vercel gives every deployment its own preview URL. Rather than listing them
