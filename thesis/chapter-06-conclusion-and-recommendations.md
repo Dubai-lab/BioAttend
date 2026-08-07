@@ -96,8 +96,12 @@ This produced two findings of general applicability:
    Testing that omits the multi-identity case leaves the safeguard untested while
    the system appears to function correctly.
 
-The design was revised so that the fallback path establishes identity by staff
-number and uses facial recognition for one-to-one verification only.
+The design was revised so that one-to-many identification returns an identity
+only when the best match both exceeds a similarity threshold and beats the
+runner-up by a margin. Where either condition fails, the system requests the
+staff number and performs one-to-one verification against that asserted
+identity. Speed is preserved for the common case; the decision is refused
+precisely where it cannot be made safely.
 
 ### 6.2.5 Objective 5 — Evaluation
 

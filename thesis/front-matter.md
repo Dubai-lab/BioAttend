@@ -138,9 +138,10 @@ identification matched an unenrolled individual to a closely related enrolled
 participant, with genuine and impostor similarity distributions overlapping
 completely such that no threshold separated them. A margin-based safeguard
 intended to prevent this was found inactive because only one identity was
-enrolled. The system was consequently redesigned so that facial recognition
-performs one-to-one verification against an asserted identity rather than
-one-to-many identification.
+enrolled. The system was consequently redesigned to require both a similarity
+threshold and a margin over the runner-up before naming anyone, and to fall
+back to one-to-one verification against an asserted identity whenever either
+condition fails.
 
 The study concludes that multimodality in attendance systems is best understood
 as a population coverage measure rather than an accuracy measure; that the

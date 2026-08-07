@@ -199,6 +199,35 @@ so that the audit trail does not become a secondary and less-protected copy of
 the biometric data. Audit entries are append-only: no update or delete policy
 exists for any application role.
 
+### 5.2.8 Increment 8 — Deployment
+
+The console and kiosk interfaces were deployed as a static build to a hosting
+platform, with the database and authentication remaining on the managed
+service. The local bridge remains on each check-in station, since it exists to
+reach hardware physically attached to that machine and cannot be hosted.
+
+Deployment surfaced one behaviour absent in local development. The deployed
+site is served over HTTPS from a public origin, while the bridge answers over
+plain HTTP on the loopback address. Browsers treat a request from a public
+origin to a local one as a **private network access**, and require both an
+explicit server opt-in and the user's permission. The bridge was extended to
+answer the corresponding preflight; the permission is granted once per machine
+through the browser's site settings.
+
+The failure mode is worth recording: a denied permission is indistinguishable
+from a stopped bridge, since the request is blocked before it is sent and the
+bridge logs nothing. Both causes are therefore named in the interface when the
+bridge is unreachable.
+
+---
+
+> **[DIAGRAM 5.1b]** — Deployment topology: hosted static site and managed
+> database in one region, and the check-in station with its local bridge and
+> attached reader. Mark which connections cross the public internet and which
+> stay on the local machine.
+
+---
+
 ## 5.3 Technologies Used
 
 ### 5.3.1 Justification of principal choices
@@ -480,12 +509,37 @@ it.
    population.** Testing that omits the multi-identity case leaves the safeguard
    untested while giving the appearance of a working system.
 
-**Design response.** The identification path was replaced by the two-stage
-fallback described in Chapter Four, Section 4.4.5: the staff member asserts
-identity by staff number, and facial recognition performs one-to-one
-verification. Where one-to-many identification is retained, both the threshold
-and the margin conditions must be satisfied, and the function returns *ambiguous*
-rather than a nearest match.
+**Design response.** The matching function was revised to enforce two
+conditions rather than one, and a second fallback stage was added.
+
+One-to-many identification is retained as the first fallback, because a
+check-in requiring typing is one staff will avoid, and the throughput argument
+for serial multimodality (Section 4.4.4) applies equally to the fallback path.
+However, the function now returns an identity only if the best match both
+exceeds the similarity threshold **and** exceeds the runner-up by a configured
+margin. Where either condition fails it returns *ambiguous*, naming nobody.
+
+The system then requests the staff number and performs one-to-one verification
+against the asserted identity, as described in Section 4.4.5.
+
+The resulting behaviour is therefore graded rather than binary:
+
+| Condition | System response |
+|---|---|
+| Confident, unambiguous match | Attendance recorded, no typing |
+| Ambiguous or weak match | Staff number requested, then 1:1 verification |
+| Verification fails | Refused; attempt logged |
+
+This preserves the speed of the common case while removing the specific
+failure observed, since the misidentification arose from an unambiguous-looking
+match against a population too small to produce a competing candidate. The
+threshold was additionally raised, and the margin widened, on the basis of the
+scores above.
+
+> **[TO COMPLETE]** — The margin condition has not yet been observed to fire,
+> because it requires two similar individuals to be enrolled simultaneously.
+> Report the outcome of that trial (Section 5.6.4, final note) as the
+> confirmatory evidence for this design response.
 
 > **[TO COMPLETE]** — After enrolling the second sibling, repeat the trial and
 > report whether the margin condition correctly returns *ambiguous*. This is the
