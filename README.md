@@ -199,6 +199,13 @@ kept deliberately as the only documentation this API has. The rule: **Windows
 signatures = the Android JNI signature plus a leading device-context pointer**,
 and `ZAZOpenDeviceEx`'s first parameter is an OUT pointer receiving that context.
 
+## The written report
+
+The dissertation lives in [`thesis/`](thesis/), one file per chapter. See
+[`thesis/README.md`](thesis/README.md) for its current state, which sections
+carry the academic contribution and must not be cut, and which markers still
+need the author's data or a verified citation.
+
 ## Status
 
 Both biometrics work end to end: enrol → sync → identify → attendance recorded,
