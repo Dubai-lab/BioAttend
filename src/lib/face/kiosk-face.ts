@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { getHuman, readFace, type FaceRejection } from '@/lib/face/engine'
+import { checkLiveness, getHuman, type LivenessRejection } from '@/lib/face/engine'
+import { faceService } from '@/lib/face/service'
 import type { FaceIdentifyResult, FaceVerifyResult } from '@/types/database'
 
 export interface FaceVerifyByNumberResult {
@@ -27,7 +28,7 @@ function toVector(embedding: number[]): string {
 
 export interface FaceScanFailure {
   ok: false
-  reason: FaceRejection | 'timeout'
+  reason: LivenessRejection | 'timeout' | 'no_embedding'
 }
 
 export interface FaceScanSuccess {
@@ -37,10 +38,18 @@ export interface FaceScanSuccess {
 }
 
 /**
- * Watch the camera until a live, non-spoofed face appears.
+ * Watch the camera until a live face appears, then embed it.
  *
- * Requires several consecutive good frames rather than one. A single frame can
- * catch a photo mid-wave or a face half out of shot; consecutive frames cannot.
+ * Two stages, deliberately separated:
+ *
+ *   1. Liveness, in the browser. Cheap, runs on every frame, and rejects
+ *      photographs before anything is sent anywhere.
+ *   2. Embedding, from the local InsightFace service. Called once, on the
+ *      frame that passed — recognition is the expensive step and there is no
+ *      reason to run it on frames that will be discarded.
+ *
+ * Several consecutive live frames are required before embedding. A single
+ * frame can catch a photo mid-wave; consecutive frames cannot.
  */
 export async function scanForFace(
   video: HTMLVideoElement,
@@ -50,25 +59,32 @@ export async function scanForFace(
   const deadline = Date.now() + timeoutMs
 
   let streak = 0
-  let best: { embedding: number[]; real: number } | null = null
-  let lastReason: FaceRejection = 'no_face'
+  let bestReal = 0
+  let lastReason: LivenessRejection = 'no_face'
 
   while (Date.now() < deadline) {
     if (video.readyState >= 2) {
-      const reading = await readFace(human, video)
+      const liveness = await checkLiveness(human, video)
 
-      if (reading.ok) {
+      if (liveness.ok) {
         streak += 1
-        if (!best || reading.sample.real > best.real) {
-          best = { embedding: reading.sample.embedding, real: reading.sample.real }
-        }
-        if (streak >= requiredFrames && best) {
-          return { ok: true, embedding: best.embedding, real: best.real }
+        bestReal = Math.max(bestReal, liveness.reading.real)
+
+        if (streak >= requiredFrames) {
+          const embedded = await faceService.embedFrame(video)
+          if (!embedded.ok) {
+            // The recognition model disagreed with the liveness detector about
+            // whether there is a usable face. Keep watching rather than fail.
+            streak = 0
+            lastReason = embedded.reason === 'multiple_faces' ? 'multiple_faces' : 'no_face'
+            continue
+          }
+          return { ok: true, embedding: embedded.embedding, real: bestReal }
         }
       } else {
-        // A spoof attempt should not be averaged away by a few good frames.
+        // A spoof attempt must not be averaged away by a few good frames.
         streak = 0
-        lastReason = reading.reason
+        lastReason = liveness.reason
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 120))

@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { bridge } from '@/lib/fingerprint/bridge'
+import { faceService } from '@/lib/face/service'
 
 export interface ServiceStatus {
   /** Is the local fingerprint bridge answering? */
   online: boolean | null
+  /** Is the local face recognition service answering? */
+  faceOnline: boolean | null
   /** e.g. "1 / 1" — readers registered and reachable. */
   readersReachable: string
   /** Human phrase for the most recent reader sync, or null if never. */
@@ -24,11 +27,19 @@ const POLL_MS = 15000
  */
 export function useServiceStatus(): ServiceStatus {
   const [online, setOnline] = useState<boolean | null>(null)
+  const [faceOnline, setFaceOnline] = useState<boolean | null>(null)
   const [readerCount, setReaderCount] = useState(0)
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null)
 
+  // Both services are checked together: they run on the same machine and an
+  // operator needs to know which one is missing, not merely that something is.
   const check = useCallback(async () => {
-    setOnline(await bridge.isOnline())
+    const [fingerprint, face] = await Promise.all([
+      bridge.isOnline(),
+      faceService.isOnline(),
+    ])
+    setOnline(fingerprint)
+    setFaceOnline(face)
   }, [])
 
   useEffect(() => {
@@ -64,6 +75,7 @@ export function useServiceStatus(): ServiceStatus {
 
   return {
     online,
+    faceOnline,
     // A reader is only usable if the bridge that drives it is running, so a
     // registered reader with the service down counts as unreachable.
     readersReachable: `${online ? readerCount : 0} / ${readerCount}`,

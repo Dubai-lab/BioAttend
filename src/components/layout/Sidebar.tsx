@@ -10,6 +10,7 @@ interface SidebarProps {
   badges?: Record<string, number>
   /** Undefined while the first health check is still in flight. */
   serviceOnline?: boolean
+  faceOnline?: boolean
   readersReachable?: string
   lastSyncAt?: string
 }
@@ -20,6 +21,7 @@ export function Sidebar({
   // default of false would report a working service as offline for the first
   // second of every page load.
   serviceOnline,
+  faceOnline,
   readersReachable,
   lastSyncAt,
 }: SidebarProps) {
@@ -100,10 +102,37 @@ export function Sidebar({
         {lastSyncAt && (
           <p className="pl-4 text-[11px] text-slate-400">Last sync {lastSyncAt}</p>
         )}
+        {/* Face runs as its own service on a different interpreter, so it can
+            be down while fingerprint is up. Reporting them together would hide
+            which one needs restarting. */}
+        <div className="mt-1.5 flex items-center gap-2 border-t border-shell-800 pt-1.5">
+          <span
+            className={cn(
+              'size-2 rounded-full',
+              faceOnline === undefined
+                ? 'bg-slate-500'
+                : faceOnline
+                  ? 'bg-success-500'
+                  : 'bg-danger-500',
+            )}
+            aria-hidden="true"
+          />
+          <p className="text-xs font-medium text-white">
+            Face service{' '}
+            {faceOnline === undefined ? 'checking…' : faceOnline ? 'online' : 'offline'}
+          </p>
+        </div>
+
         {serviceOnline === false && (
           <p className="mt-1 pl-4 text-[11px] leading-snug text-slate-500">
             Start <span className="id-text">run-bridge.bat</span> on the station with
             the reader.
+          </p>
+        )}
+        {faceOnline === false && (
+          <p className="mt-1 pl-4 text-[11px] leading-snug text-slate-500">
+            Start <span className="id-text">run-face-service.bat</span> for face
+            recognition.
           </p>
         )}
       </div>

@@ -9,11 +9,12 @@ import {
   ShieldAlert,
 } from 'lucide-react'
 import {
+  checkLiveness,
   describeRejection,
   getHuman,
-  readFace,
-  type FaceSample,
+  type LivenessReading,
 } from '@/lib/face/engine'
+import { describeEmbedFailure, faceService } from '@/lib/face/service'
 import { cn } from '@/lib/utils'
 
 /**
@@ -70,7 +71,11 @@ export function FaceCapture({
   const [ready, setReady] = useState(false)
   const [loadingModels, setLoadingModels] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [live, setLive] = useState<{ sample?: FaceSample; message?: string } | null>(null)
+  const [live, setLive] = useState<{ reading?: LivenessReading; message?: string } | null>(null)
+  // Pose is measured by the recognition service, not the browser, so the
+  // readiness indicator only updates when a capture is attempted. The live
+  // overlay still shows whether the face is real.
+  const [pose, setPose] = useState<{ yaw: number; pitch: number } | null>(null)
   const [busy, setBusy] = useState<FaceAngle | null>(null)
 
   const capturedFor = (angle: FaceAngle) => captured.find((item) => item.angle === angle)
@@ -124,12 +129,12 @@ export function FaceCapture({
       const human = await getHuman()
       while (!cancelled) {
         if (videoRef.current && videoRef.current.readyState >= 2) {
-          const reading = await readFace(human, videoRef.current)
+          const result = await checkLiveness(human, videoRef.current)
           if (cancelled) break
           setLive(
-            reading.ok
-              ? { sample: reading.sample }
-              : { message: describeRejection(reading.reason) },
+            result.ok
+              ? { reading: result.reading }
+              : { message: describeRejection(result.reason) },
           )
         }
         await new Promise((resolve) => setTimeout(resolve, 250))
@@ -149,8 +154,11 @@ export function FaceCapture({
    * function drives both the live readiness indicator and the capture guard,
    * so the button never lies about whether pressing will work.
    */
-  function poseProblem(angle: FaceAngle, sample: FaceSample | undefined): string | null {
-    if (!sample) return 'No face detected'
+  function poseProblem(
+    angle: FaceAngle,
+    sample: { yaw: number; pitch: number } | undefined,
+  ): string | null {
+    if (!sample) return null // pose is only known once a frame is analysed
 
     const spec = FACE_ANGLES.find((item) => item.key === angle)!
     if (spec.axis === null) return null // front sets the baseline; any pose is fine
@@ -188,15 +196,30 @@ export function FaceCapture({
     setError(null)
 
     try {
+      // 1. Liveness gate, in the browser. A photograph never reaches the
+      //    recognition service.
       const human = await getHuman()
-      const reading = await readFace(human, videoRef.current)
+      const liveness = await checkLiveness(human, videoRef.current)
 
-      if (!reading.ok) {
-        setError(describeRejection(reading.reason))
+      if (!liveness.ok) {
+        setError(describeRejection(liveness.reason))
         return
       }
 
-      const problem = poseProblem(angle, reading.sample)
+      // 2. Embedding, from InsightFace on the local service. The frame is
+      //    posted; only the vector comes back.
+      const embedded = await faceService.embedFrame(videoRef.current)
+
+      if (!embedded.ok) {
+        setError(describeEmbedFailure(embedded))
+        return
+      }
+
+      setPose({ yaw: embedded.yaw, pitch: embedded.pitch })
+
+      // 3. Confirm the requested head position was actually adopted, using
+      //    the pose the recognition model measured.
+      const problem = poseProblem(angle, embedded)
       if (problem) {
         setError(problem)
         return
@@ -204,10 +227,10 @@ export function FaceCapture({
 
       onCaptured({
         angle,
-        embedding: reading.sample.embedding,
-        quality: reading.sample.score,
-        yaw: reading.sample.yaw,
-        pitch: reading.sample.pitch,
+        embedding: embedded.embedding,
+        quality: embedded.score,
+        yaw: embedded.yaw,
+        pitch: embedded.pitch,
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -243,7 +266,7 @@ export function FaceCapture({
               </div>
             )}
 
-            {ready && live && <LiveOverlay live={live} baseline={baseline} />}
+            {ready && live && <LiveOverlay live={live} pose={pose} baseline={baseline} />}
           </div>
 
           <button
@@ -271,8 +294,18 @@ export function FaceCapture({
           {FACE_ANGLES.map((spec) => {
             const done = capturedFor(spec.key)
             const isBusy = busy === spec.key
-            const problem = ready ? poseProblem(spec.key, live?.sample) : 'Camera is off'
-            const canCapture = ready && !problem && !busy && !disabled
+            // Pose is measured by the recognition service, so readiness here
+            // reflects liveness only. If the head position is wrong the
+            // capture is refused with an explanation rather than pre-empted.
+            const blocked = !ready
+              ? 'Camera is off'
+              : live?.message
+                ? 'Waiting for a clear, live face'
+                : spec.axis !== null && !baseline
+                  ? 'Capture "Look straight ahead" first'
+                  : null
+            const problem = blocked
+            const canCapture = ready && !blocked && !busy && !disabled
 
             return (
               <button
@@ -353,9 +386,11 @@ export function FaceCapture({
 
 function LiveOverlay({
   live,
+  pose,
   baseline,
 }: {
-  live: { sample?: FaceSample; message?: string }
+  live: { reading?: LivenessReading; message?: string }
+  pose: { yaw: number; pitch: number } | null
   baseline: CapturedFace | undefined
 }) {
   if (live.message) {
@@ -367,14 +402,18 @@ function LiveOverlay({
     )
   }
 
-  if (!live.sample) return null
-  const { real, live: liveness, yaw, pitch } = live.sample
+  if (!live.reading) return null
+  const { real, live: liveness } = live.reading
 
-  // Once a baseline exists, movement matters more than absolute angle.
-  const yawText = baseline ? `${(yaw - baseline.yaw).toFixed(0)}°` : `${yaw.toFixed(0)}°`
-  const pitchText = baseline
-    ? `${(pitch - baseline.pitch).toFixed(0)}°`
-    : `${pitch.toFixed(0)}°`
+  // Pose is from the most recent capture, not the live frame — the browser no
+  // longer measures it. Once a baseline exists, movement matters more than
+  // absolute angle.
+  const yawText = pose
+    ? `${(baseline ? pose.yaw - baseline.yaw : pose.yaw).toFixed(0)}°`
+    : '—'
+  const pitchText = pose
+    ? `${(baseline ? pose.pitch - baseline.pitch : pose.pitch).toFixed(0)}°`
+    : '—'
 
   return (
     <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-success-700/85 px-3 py-2 text-xs text-white">

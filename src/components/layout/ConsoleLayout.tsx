@@ -42,6 +42,7 @@ export function ConsoleLayout() {
       <Sidebar
         badges={badges}
         serviceOnline={status.online ?? undefined}
+        faceOnline={status.faceOnline ?? undefined}
         readersReachable={status.readersReachable}
         lastSyncAt={status.lastSync ?? undefined}
       />

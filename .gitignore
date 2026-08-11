@@ -49,3 +49,7 @@ supabase/.temp/
 # --- Python bytecode ---
 __pycache__/
 *.pyc
+
+# --- Python virtual environments ---
+.venv-face/
+.venv/

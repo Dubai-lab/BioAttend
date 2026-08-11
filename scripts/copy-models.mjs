@@ -18,13 +18,15 @@ const source = join(root, 'node_modules', '@vladmandic', 'human', 'models')
 const target = join(root, 'public', 'models')
 
 // Only what the face pipeline needs. The full folder is 28 MB; this is ~13 MB.
+// Recognition moved to InsightFace in the local face service, so the
+// descriptor and iris models are no longer copied — about 9 MB less for the
+// kiosk to download on first load. What remains is only what anti-spoofing
+// needs: detect a face, align it, and judge whether it is live.
 const MODELS = [
   'blazeface', // face detection
-  'facemesh', // landmarks, used for alignment and angle checks
-  'faceres', // the 1024-d descriptor — this is the actual recognition model
+  'facemesh', // alignment, required by the anti-spoof models
   'antispoof', // rejects photos and screens
   'liveness', // rejects still images
-  'iris', // gaze, improves angle estimation during enrolment
 ]
 
 if (!existsSync(source)) {
