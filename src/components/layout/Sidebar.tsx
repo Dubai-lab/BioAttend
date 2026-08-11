@@ -75,66 +75,74 @@ export function Sidebar({
         ))}
       </nav>
 
-      {/* Biometric service status — operators need this visible at all times */}
-      <div className="mx-3 mb-3 rounded-card bg-shell-950 px-3 py-2.5">
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'size-2 rounded-full',
-              serviceOnline === undefined
-                ? 'bg-slate-500'
+      {/* Service status — operators need this visible at all times.
+          Each service carries its own remedy directly beneath it: a hint
+          placed under the wrong service reads as though that service needs
+          the other one's launcher. */}
+      <div className="mx-3 mb-3 space-y-2 rounded-card bg-shell-950 px-3 py-2.5">
+        <div>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'size-2 shrink-0 rounded-full',
+                serviceOnline === undefined
+                  ? 'bg-slate-500'
+                  : serviceOnline
+                    ? 'bg-success-500'
+                    : 'bg-danger-500',
+              )}
+              aria-hidden="true"
+            />
+            <p className="text-xs font-medium text-white">
+              Fingerprint{' '}
+              {serviceOnline === undefined
+                ? 'checking…'
                 : serviceOnline
-                  ? 'bg-success-500'
-                  : 'bg-danger-500',
-            )}
-            aria-hidden="true"
-          />
-          <p className="text-xs font-medium text-white">
-            Biometric service{' '}
-            {serviceOnline === undefined ? 'checking…' : serviceOnline ? 'online' : 'offline'}
-          </p>
-        </div>
-        {readersReachable && (
-          <p className="mt-1 pl-4 text-[11px] text-slate-400">
-            {readersReachable} readers reachable
-          </p>
-        )}
-        {lastSyncAt && (
-          <p className="pl-4 text-[11px] text-slate-400">Last sync {lastSyncAt}</p>
-        )}
-        {/* Face runs as its own service on a different interpreter, so it can
-            be down while fingerprint is up. Reporting them together would hide
-            which one needs restarting. */}
-        <div className="mt-1.5 flex items-center gap-2 border-t border-shell-800 pt-1.5">
-          <span
-            className={cn(
-              'size-2 rounded-full',
-              faceOnline === undefined
-                ? 'bg-slate-500'
-                : faceOnline
-                  ? 'bg-success-500'
-                  : 'bg-danger-500',
-            )}
-            aria-hidden="true"
-          />
-          <p className="text-xs font-medium text-white">
-            Face service{' '}
-            {faceOnline === undefined ? 'checking…' : faceOnline ? 'online' : 'offline'}
-          </p>
+                  ? 'online'
+                  : 'offline'}
+            </p>
+          </div>
+
+          {serviceOnline && readersReachable && (
+            <p className="mt-0.5 pl-4 text-[11px] text-slate-400">
+              {readersReachable} readers reachable
+            </p>
+          )}
+          {serviceOnline && lastSyncAt && (
+            <p className="pl-4 text-[11px] text-slate-400">Last sync {lastSyncAt}</p>
+          )}
+          {serviceOnline === false && (
+            <p className="mt-0.5 pl-4 text-[11px] leading-snug text-slate-500">
+              Start <span className="id-text">run-bridge.bat</span>
+            </p>
+          )}
         </div>
 
-        {serviceOnline === false && (
-          <p className="mt-1 pl-4 text-[11px] leading-snug text-slate-500">
-            Start <span className="id-text">run-bridge.bat</span> on the station with
-            the reader.
-          </p>
-        )}
-        {faceOnline === false && (
-          <p className="mt-1 pl-4 text-[11px] leading-snug text-slate-500">
-            Start <span className="id-text">run-face-service.bat</span> for face
-            recognition.
-          </p>
-        )}
+        <div className="border-t border-shell-800 pt-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'size-2 shrink-0 rounded-full',
+                faceOnline === undefined
+                  ? 'bg-slate-500'
+                  : faceOnline
+                    ? 'bg-success-500'
+                    : 'bg-danger-500',
+              )}
+              aria-hidden="true"
+            />
+            <p className="text-xs font-medium text-white">
+              Face{' '}
+              {faceOnline === undefined ? 'checking…' : faceOnline ? 'online' : 'offline'}
+            </p>
+          </div>
+
+          {faceOnline === false && (
+            <p className="mt-0.5 pl-4 text-[11px] leading-snug text-slate-500">
+              Start <span className="id-text">run-face-service.bat</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Signed-in user */}
