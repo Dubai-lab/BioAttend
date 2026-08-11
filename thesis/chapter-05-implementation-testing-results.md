@@ -350,39 +350,19 @@ artefacts to the biometric sensors.
 
 ### 5.5.2 Functional test cases
 
-> **[TO COMPLETE]** — Execute each case and record the observed result. The
-> table below lists the cases; fill the final two columns.
+Twenty-nine test cases were defined, one or more per functional requirement,
+each with defined preconditions, inputs and expected outputs. The full matrix
+is presented in **Appendix F**.
 
-| ID | Requirement | Test case | Expected | Observed | Pass/Fail |
-|---|---|---|---|---|---|
-| TC1 | FR1 | Create staff with valid details | Record created, staff number assigned | | |
-| TC2 | FR2 | Attempt capture before consent recorded | Capture controls disabled | | |
-| TC3 | FR4 | Present a poor-quality fingerprint | Capture rejected, not stored | | |
-| TC4 | FR6 | Request a head position and hold the head straight | Capture refused with guidance | | |
-| TC5 | FR7 | Present a printed photograph to the camera | Rejected as not live | | |
-| TC6 | FR7 | Present a photograph on a phone screen | Rejected as not live | | |
-| TC7 | FR9 | Deactivate a staff member, then present their finger | Attendance refused | | |
-| TC8 | FR11 | Assign two shifts to one staff member on one date | Second replaces first | | |
-| TC9 | FR12 | Present an enrolled finger within the check-in window | Check-in recorded, on time | | |
-| TC10 | FR13 | Present an unenrolled finger, then a face | Falls through to face path | | |
-| TC11 | FR14 | Present the face of one of two similar individuals | Refused as ambiguous | | |
-| TC12 | FR15 | Enter staff number and present face | Verified and recorded | | |
-| TC13 | FR16 | Present a finger before the window opens | Refused, opening time shown | | |
-| TC14 | FR17 | Present a finger during the check-out window | Check-out recorded | | |
-| TC15 | FR18 | Present a finger between windows | Refused, attempt logged | | |
-| TC16 | FR19 | Check in after the grace period | Recorded, flagged for approval | | |
-| TC17 | FR19 | Check in with no roster entry | Recorded, flagged unscheduled | | |
-| TC18 | FR20 | Inspect the attempt log after a refusal | Refusal present with score and reason | | |
-| TC19 | FR21 | Call the attendance function with an invalid station credential | Rejected | | |
-| TC20 | FR21 | Call the attendance function with no credential | Rejected | | |
-| TC21 | FR23 | Approve a flagged record | Approval recorded; captured times unchanged | | |
-| TC22 | FR24 | Export attendance and attempts | Files produced with expected columns | | |
-| TC23 | FR25 | Create a supervisor for one department | Account created; role assigned | | |
-| TC24 | NFR5 | Sign in as supervisor and attempt to read biometric records | No rows returned | | |
-| TC25 | NFR5 | Sign in as supervisor and request another department's staff | No rows returned | | |
-| TC26 | NFR6 | Attempt a direct insert into the attendance table | Permission denied | | |
-| TC27 | FR29 | Synchronise the reader, then identify a newly enrolled staff member | Identified successfully | | |
-| TC28 | NFR12 | Clear the device library and re-synchronise | All active staff restored | | |
+Cases fall into two groups. Positive cases verify that the system performs a
+required function — enrolment completes, a check-in is recorded, an export
+produces the expected columns. **Negative cases verify that the system refuses
+what it should refuse**, and are the more informative of the two here: capture
+before consent is recorded, attendance submitted without a station credential,
+a supervisor reading biometric records, a scan outside every shift window, a
+photograph presented to the camera. A system that performs its functions but
+fails to refuse invalid operations would satisfy the first group entirely while
+being unfit for use.
 
 ### 5.5.3 Accuracy trial protocol
 

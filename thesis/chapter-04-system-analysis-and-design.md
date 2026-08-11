@@ -232,232 +232,103 @@ timestamp of the event. A shift beginning at 23:00 on the 7th is filed under the
 
 ### 4.5.1 Functional requirements
 
-| ID | Requirement | Priority |
-|---|---|---|
-| **Staff and enrolment** | | |
-| FR1 | The system shall allow an administrator to register a staff member with biographic details, department and job title. | High |
-| FR2 | The system shall record biometric consent before permitting any biometric capture, and shall prevent capture until consent is recorded. | High |
-| FR3 | The system shall capture and store fingerprint templates for up to four fingers per staff member. | High |
-| FR4 | The system shall reject a fingerprint capture whose quality falls below a configured minimum. | High |
-| FR5 | The system shall capture and store facial embeddings from five head positions per staff member. | High |
-| FR6 | The system shall verify that a requested head position was achieved before accepting a facial capture. | Medium |
-| FR7 | The system shall reject a facial capture that fails anti-spoofing or liveness checks. | High |
-| FR8 | The system shall allow biometrics to be added to or replaced on an existing staff record without recreating it. | High |
-| FR9 | The system shall allow a staff member to be deactivated, after which they cannot record attendance, while retaining their attendance history. | High |
-| **Rostering** | | |
-| FR10 | The system shall allow shifts to be assigned to staff for specific dates. | High |
-| FR11 | The system shall permit at most one shift assignment per staff member per date. | High |
-| **Attendance** | | |
-| FR12 | The system shall identify a staff member from a presented fingerprint. | High |
-| FR13 | The system shall identify a staff member from a presented face when fingerprint identification does not succeed. | High |
-| FR14 | The system shall refuse to identify when two enrolled individuals score within a configured margin of each other. | High |
-| FR15 | The system shall allow a staff member to assert identity by staff number and confirm it by one-to-one facial verification. | High |
-| FR16 | The system shall record a check-in when the current time falls within the check-in window of the staff member's shift. | High |
-| FR17 | The system shall record a check-out when the current time falls within the check-out window. | High |
-| FR18 | The system shall refuse a scan outside both windows and record the refused attempt. | High |
-| FR19 | The system shall classify each check-in as on time, late, late beyond grace, or unscheduled. | High |
-| FR20 | The system shall record every recognition attempt, including refused ones, with its match score and outcome. | High |
-| FR21 | The system shall accept attendance only from a registered check-in station presenting a valid credential. | High |
-| **Review and reporting** | | |
-| FR22 | The system shall display current attendance, updated without user action. | Medium |
-| FR23 | The system shall present flagged records for supervisor approval, recording who approved and when without altering captured times. | High |
-| FR24 | The system shall export attendance records and recognition attempts in a portable format. | High |
-| **Administration** | | |
-| FR25 | The system shall allow an administrator to create console users with a role and, for supervisors, a department. | High |
-| FR26 | The system shall allow registration of check-in stations and rotation of their credentials. | High |
-| FR27 | The system shall allow configuration of shift windows and matching thresholds. | High |
-| FR28 | The system shall record administrative actions in an append-only audit log, excluding biometric payloads. | Medium |
-| FR29 | The system shall synchronise stored fingerprint templates to a reader device and maintain the mapping between device storage slots and staff. | High |
+Twenty-nine functional requirements were specified, grouped into five areas.
+The full specification is presented in **Appendix A**; the requirements
+central to the design decisions above are summarised here.
+
+**Enrolment (FR1–FR9).** The system registers staff with biographic details,
+records biometric consent before permitting any capture, and stores up to four
+fingerprint templates and five facial embeddings per person. Captures below a
+configured quality threshold are rejected rather than stored. Biometrics can be
+added to or replaced on an existing record without recreating it, and a staff
+member can be deactivated — blocking attendance while retaining their history.
+
+**Rostering (FR10–FR11).** Shifts are assigned per staff member per date, with
+at most one assignment per person per day.
+
+**Attendance (FR12–FR21).** The system identifies by fingerprint, falls back to
+face, and refuses to identify when two individuals score within a configured
+margin of each other. Each event is evaluated against the shift window and
+classified as on time, late, late beyond grace, or unscheduled. Every attempt is
+recorded, including refusals. Attendance is accepted only from a registered
+station presenting a valid credential.
+
+**Review (FR22–FR24)** covers live attendance, supervisor approval that records
+who signed off without altering captured times, and export of both attendance
+and raw recognition attempts.
+
+**Administration (FR25–FR29)** covers console users, station registration,
+threshold configuration, append-only audit logging that excludes biometric
+payloads, and reader synchronisation.
 
 ### 4.5.2 Non-functional requirements
 
-| ID | Requirement | Measure |
-|---|---|---|
-| NFR1 | **Response time.** A fingerprint identification shall complete within 3 seconds of presentation. | Measured at the station |
-| NFR2 | **Throughput.** The system shall support a shift change in which staff arrive in rapid succession without queuing at the station. | Transactions per minute |
-| NFR3 | **Accuracy.** False acceptance shall be prioritised over false rejection in threshold selection. | FAR, FRR from measured data |
-| NFR4 | **Availability.** Failure of the local bridge shall not prevent the administrative console from operating. | Console functions independently |
-| NFR5 | **Security.** Biometric records shall be accessible only to administrators, enforced at the database. | Row-level security policies |
-| NFR6 | **Security.** Attendance shall not be recordable without a station credential. | No insert permission on the table |
-| NFR7 | **Privacy.** No fingerprint image or facial photograph shall be stored. | Templates and embeddings only |
-| NFR8 | **Usability.** A normal check-in shall require exactly one action from the staff member. | Observed |
-| NFR9 | **Legibility.** The station display shall be readable from two metres. | Type size and contrast |
-| NFR10 | **Auditability.** Recorded attendance times shall not be modifiable through the application. | No update path for times |
-| NFR11 | **Maintainability.** The database schema shall be defined in versioned migration files. | Migrations under version control |
-| NFR12 | **Recoverability.** Loss of a reader device shall not lose biometric data. | Templates held in the database |
+Twelve non-functional requirements are specified in full in **Appendix B**,
+each with a stated measure. Four govern the design directly:
+
+- **NFR3** — false acceptance is prioritised over false rejection when
+  selecting thresholds, because the two errors are not equally damaging.
+- **NFR5** — biometric records are accessible only to administrators, enforced
+  by row-level security rather than application logic.
+- **NFR6** — attendance is not recordable without a station credential.
+- **NFR12** — loss of a reader device does not lose biometric data.
 
 ## 4.6 System Design
 
 ### 4.6.1 Use case model
 
-**Actors**
+Five actors interact with the system.
 
 | Actor | Description |
 |---|---|
 | Staff member | Records attendance. Has no account and cannot sign in. |
 | Departmental supervisor | Reviews attendance and approves exceptions for their own department. |
 | Administrator (HR) | Enrols staff, captures biometrics, configures the system, manages access. |
-| Check-in station | A registered device that submits attendance events. Authenticates as a device, not a person. |
-| Biometric bridge | Local service mediating access to the fingerprint device. |
+| Check-in station | A registered device that submits attendance events, authenticating as a device rather than a person. |
+| Local services | Mediate access to the fingerprint reader and the recognition models. |
 
-**Principal use cases**
-
-| ID | Use case | Primary actor |
-|---|---|---|
-| UC1 | Enrol staff member | Administrator |
-| UC2 | Capture fingerprint | Administrator |
-| UC3 | Capture face | Administrator |
-| UC4 | Synchronise reader | Administrator |
-| UC5 | Assign shift | Supervisor / Administrator |
-| UC6 | Check in by fingerprint | Staff member |
-| UC7 | Check in by face | Staff member |
-| UC8 | Verify by staff number and face | Staff member |
-| UC9 | Check out | Staff member |
-| UC10 | View live attendance | Supervisor / Administrator |
-| UC11 | Approve exception | Supervisor / Administrator |
-| UC12 | Export records | Supervisor / Administrator |
-| UC13 | Manage console users | Administrator |
-| UC14 | Register check-in station | Administrator |
-| UC15 | Configure thresholds and windows | Administrator |
-
----
-
-> **[DIAGRAM 4.3]** — Use case diagram. Place *Staff member* on the left with
-> UC6–UC9; *Supervisor* and *Administrator* on the right, with Administrator
-> inheriting Supervisor's cases. Show *Check-in station* as a secondary actor on
-> UC6–UC9. Note that Staff member has no login — worth annotating, since it is
-> unusual and deliberate.
-
----
-
-**Use case specification — UC6: Check in by fingerprint**
-
-| Field | Description |
-|---|---|
-| Actor | Staff member |
-| Precondition | Staff member enrolled and active; templates synchronised to the reader; station registered; bridge running |
-| Trigger | Staff member places a finger on the sensor |
-| Main flow | 1. Station captures the fingerprint image. 2. Bridge extracts features and searches the device library. 3. Device returns a storage slot and match score. 4. Station resolves the slot to a staff member. 5. Station submits the event with its station credential. 6. Server verifies the credential. 7. Server resolves the shift for the current moment. 8. Server evaluates the time against the check-in window. 9. Server records the check-in with its classification. 10. Station displays the outcome and clears. |
-| Alternative — no match | Proceed to UC7 (face). |
-| Alternative — outside window | Server refuses, records the attempt, station explains when the window opens. |
-| Alternative — no roster entry | Record created and flagged as unscheduled. |
-| Alternative — inactive staff | Refused; attempt recorded. |
-| Postcondition | An attendance record exists, or a refused attempt is logged. |
+Fifteen use cases are identified, listed in full with the specification for
+UC6 (check in by fingerprint) in **Appendix C**. That the staff member — the
+principal subject of the system — has no account and never authenticates is
+the most consequential feature of this model, and is what prevents attendance
+being recorded from anywhere other than a registered station.
 
 ### 4.6.2 Database design
 
-The database comprises fifteen tables in five groups.
+The database comprises fifteen tables across reference data, people,
+biometrics, devices and operations. The full schema with design notes is
+presented in **Appendix D**.
 
-**Reference data**
+Three decisions shape it.
 
-| Table | Purpose |
-|---|---|
-| `departments` | Hospital departments |
-| `job_titles` | Job titles grouped by category |
-| `shifts` | Shift definitions with window configuration |
-| `hospital_settings` | Single-row institution configuration including thresholds |
+**Attendance is one row per staff member per shift date**, with check-in and
+check-out as columns and a uniqueness constraint on that pair. "Already checked
+in today" is therefore enforced by the schema rather than by a query.
 
-**People**
+**Recognition attempts are stored separately from attendance records.** Every
+scan is logged, including refusals — which serves as evidence when a staff
+member disputes that the system failed them, and constitutes the dataset from
+which the accuracy figures in Chapter Five are computed. Refused attempts
+appear nowhere else, and a false rejection rate cannot be calculated without
+them.
 
-| Table | Purpose |
-|---|---|
-| `staff` | Staff members. Deliberately not linked to authentication. |
-| `profiles` | Console users, linked to authentication accounts |
-
-**Biometrics**
-
-| Table | Purpose |
-|---|---|
-| `fingerprint_templates` | Templates, one per finger per staff member |
-| `face_embeddings` | Facial embeddings, one per head position per staff member |
-
-**Devices**
-
-| Table | Purpose |
-|---|---|
-| `readers` | Fingerprint devices |
-| `reader_slots` | Mapping from device storage slot to staff member |
-| `kiosks` | Check-in stations and their credential hashes |
-
-**Operations**
-
-| Table | Purpose |
-|---|---|
-| `shift_assignments` | Roster: one shift per staff member per date |
-| `attendance` | One record per staff member per shift date |
-| `attendance_attempts` | Every recognition attempt, including refusals |
-| `audit_log` | Administrative actions |
-
-**Design notes**
-
-*Attendance as a single row per shift date.* Check-in and check-out are columns
-on one row rather than separate event rows, with a uniqueness constraint on
-(staff member, shift date). "Already checked in today" is therefore a property
-of the schema rather than a query result, and duplicate check-ins are prevented
-by the database.
-
-*Separation of attempts from records.* `attendance_attempts` records every scan
-including refusals. This serves two purposes: it provides evidence when a staff
-member disputes that the system failed to record them, and it constitutes the
-dataset from which the accuracy figures in Chapter Five are computed. Refused
-attempts appear nowhere else and are precisely the data required to compute a
-false rejection rate.
-
-*Slot mapping as a rebuildable cache.* The device stores a limited number of
-templates internally and returns a slot number on a match. `reader_slots` maps
-slots to staff. Because the database holds the authoritative templates, a failed
-device is replaced by synchronising a new one; no biometric data is lost with
-the hardware.
-
-*Storage of face embeddings.* Embeddings are stored in a vector column with a
-cosine-distance index, allowing similarity search to be performed by the
-database rather than the client — necessary because the client is not permitted
-to read biometric records at all.
-
----
-
-> **[DIAGRAM 4.4]** — Entity-Relationship Diagram. Show all fifteen tables with
-> primary and foreign keys and cardinalities. Suggested layout: reference data
-> at the top, `staff` central, biometric tables below it, device tables to one
-> side, and the operational tables (`shift_assignments`, `attendance`,
-> `attendance_attempts`) to the other. Mark the unique constraints on
-> (staff, shift_date) and (staff, finger).
-
-> **[DIAGRAM 4.5]** — Class Diagram of the application layer. Suggested
-> classes: `FingerprintReader`, `FaceEngine`, `AttendanceService`,
-> `EnrolmentService`, `RosterService`, `AuditService`, with their principal
-> methods and relationships.
-
----
+**The device's stored templates are treated as a rebuildable cache.** The
+database holds the authoritative copies, so a failed reader is replaced by
+synchronising a new one and no biometric data is lost with the hardware.
 
 ### 4.6.3 Access control design
 
-Access control is enforced by row-level security policies evaluated by the
-database on every query, rather than by the application.
+Access is enforced by row-level security policies evaluated by the database on
+every query, rather than by the application. The full matrix is given in
+**Appendix E**.
 
-| Table | Administrator | Supervisor | Station (anonymous) |
-|---|---|---|---|
-| `staff` | Read/write all | Read own department | None |
-| `fingerprint_templates` | Read/write | **None** | None |
-| `face_embeddings` | Read/write | **None** | None |
-| `attendance` | Read all, approve | Read own department, approve | **No insert** — function only |
-| `attendance_attempts` | Read all | Read own department | None |
-| `kiosks` | Read/write | None | None |
-| `audit_log` | Read all | Read own entries | None |
-| `hospital_settings` | Read/write | Read | None |
-
-Two aspects merit note.
-
-**Supervisors have no access to biometric records at all.** They require
-attendance data for their staff, which does not require access to templates or
-embeddings. Restricting biometric access to the smallest possible role limits
-exposure.
-
-**The check-in station cannot read biometric records either.** It holds only the
-public API key. Facial matching is therefore performed by a server-side function
-that receives a freshly computed embedding and returns a decision — the station
-never receives another person's biometric data. A compromised station discloses
-nothing.
+Two aspects merit emphasis. **Supervisors have no access to biometric records
+at all** — they require attendance data, which does not require access to
+templates or embeddings, and restricting biometrics to the smallest possible
+role limits exposure. **The check-in station cannot read biometric records
+either**: it holds only the public API key, and facial matching is performed by
+a server-side function that receives a freshly computed embedding and returns a
+decision. A compromised station therefore discloses nothing.
 
 ### 4.6.4 Attendance recording logic
 

@@ -17,50 +17,43 @@ conceptual framework derived from the review.
 
 ## 2.2 Conceptual Review
 
-### 2.2.1 Attendance management systems
+### 2.2.1 Attendance management and its failure mode
 
-Attendance management is the organisational process of recording, verifying and
-reporting the presence of personnel at their place of work. Kumar and Sharma
-([CITE: verify]) classify attendance systems into three generations: manual
-systems based on paper registers and signatures; automated token-based systems
-using magnetic cards, proximity cards or personal identification numbers; and
-biometric systems that identify individuals by physiological characteristics.
+Attendance management is the process of recording, verifying and reporting the
+presence of personnel. The literature classifies systems into three
+generations: manual paper registers; token-based systems using cards or
+personal identification numbers; and biometric systems identifying individuals
+by physiological characteristics ([CITE: verify]).
 
-The distinguishing weakness of the first two generations is that they
-authenticate a **token or a mark**, not a person. A signature can be forged, a
-card lent, a PIN shared. The literature on workforce management refers to the
-resulting substitution as *buddy punching*, and consistently identifies it as
-the principal integrity failure of non-biometric systems
-([CITE: workforce time-theft study]).
+The defining weakness of the first two generations is that they authenticate a
+**token or a mark, not a person**. A signature can be forged, a card lent, a
+PIN shared. The workforce literature calls the resulting substitution *buddy
+punching* and consistently identifies it as the principal integrity failure of
+non-biometric systems ([CITE: workforce time-theft study]).
 
-In healthcare specifically, attendance records serve purposes beyond payroll.
-They evidence staffing levels for accreditation, support clinical incident
-investigation, and inform the allocation of scarce personnel. This elevates the
-consequences of inaccuracy from a financial matter to an operational and
-clinical one ([CITE: healthcare workforce management study]).
+In healthcare the consequences extend beyond payroll: attendance records
+evidence staffing levels for accreditation, support incident investigation, and
+inform the allocation of scarce personnel ([CITE: healthcare workforce study]).
 
 ### 2.2.2 Biometric identification
 
-Jain, Ross and Prabhakar (2004) define biometric recognition as the automated
-identification of individuals based on physiological or behavioural
-characteristics, and establish seven criteria a characteristic must satisfy to
-be usable: universality, distinctiveness, permanence, collectability,
-performance, acceptability and circumvention resistance. No single characteristic
-satisfies all seven optimally, which is the foundational argument for combining
-modalities.
+Jain, Ross and Prabhakar (2004) define biometric recognition as automated
+identification based on physiological or behavioural characteristics, and
+establish seven criteria a characteristic must satisfy: universality,
+distinctiveness, permanence, collectability, performance, acceptability and
+circumvention resistance. **No single characteristic satisfies all seven
+optimally** — which is the foundational argument for combining modalities.
 
-A biometric system operates in two phases. During **enrolment**, samples are
-captured and converted into a compact mathematical representation — a *template*
-for fingerprints, or an *embedding* for faces — which is stored against the
-individual's record. During **recognition**, a fresh sample is captured,
-converted by the same process, and compared against stored representations to
-produce a similarity or distance score. A threshold applied to that score
-determines the system's decision.
+A biometric system operates in two phases. During *enrolment*, samples are
+converted into a compact mathematical representation — a *template* for
+fingerprints, an *embedding* for faces — stored against the individual. During
+*recognition*, a fresh sample is converted the same way and compared, producing
+a similarity score to which a threshold is applied.
 
-Jain et al. (2004) emphasise that templates are not reversible into the original
-biometric sample, a property with significant implications for data protection:
-the compromise of a template database is materially less severe than the
-compromise of an image database, although the templates remain personal data.
+Jain et al. (2004) emphasise that templates are not reversible into the
+original sample, which matters for data protection: compromise of a template
+database is materially less severe than compromise of an image database,
+although templates remain personal data.
 
 ### 2.2.3 Fingerprint recognition
 
@@ -213,22 +206,18 @@ representing an under-acknowledged vulnerability in such deployments
 ### 2.2.8 Shift management and rostering
 
 Attendance data acquires operational meaning only in relation to an expected
-schedule. The rostering literature, largely developed in the context of nurse
-scheduling, addresses the assignment of personnel to shifts subject to coverage
-requirements, skill mix, legal constraints and staff preferences
-([CITE: nurse rostering review]).
+schedule. The rostering literature, largely developed around nurse scheduling,
+addresses the assignment of personnel to shifts subject to coverage, skill mix,
+legal constraints and preference ([CITE: nurse rostering review]). Hospital
+shifts are commonly organised as three eight-hour or two twelve-hour periods,
+with the three-shift rotation prevailing in much of the region
+([CITE: hospital shift patterns]).
 
-Hospital shift structures are commonly organised as either three eight-hour
-shifts or two twelve-hour shifts per day. The three-shift rotation — typically
-morning, evening and night — remains the prevailing pattern in much of the
-region ([CITE: hospital shift patterns]).
-
-A recurring technical consideration is that night shifts cross the calendar day
-boundary. Attendance events for a shift beginning at 23:00 and ending at 07:00
-must be attributed to the shift's own date rather than the calendar date of the
-event, or the record will be split across two days and the analysis distorted.
-This is a well-known source of error in time and attendance systems
-([CITE: verify]).
+One technical consideration recurs: **night shifts cross the calendar day
+boundary**. Events for a shift running 23:00 to 07:00 must be attributed to the
+shift's own date rather than the calendar date of the event, or the record
+splits across two days and the analysis is distorted. This is a known source of
+error in time and attendance systems ([CITE: verify]).
 
 ### 2.2.9 Data protection and biometric consent
 
@@ -331,75 +320,42 @@ symmetric, and the threshold should not be set as though they were.
 
 ## 2.4 Empirical Review
 
-### 2.4.1 Fingerprint-based attendance systems
+**Fingerprint attendance systems** are widely reported in educational and
+organisational settings, consistently finding reduced administrative time and
+elimination of proxy attendance relative to manual registers
+([CITE: verify — Fingerprint-Based Attendance Management System]). Studies of
+public-sector deployments report positive perceptions of accountability
+([CITE: verify — public sector biometric attendance study]). A common
+limitation is that these evaluations emphasise administrative benefit and user
+perception while providing little quantitative accuracy data — few report false
+acceptance, false rejection or failure-to-enrol rates measured in deployment.
 
-Numerous studies report the implementation of fingerprint attendance systems in
-educational and organisational settings. Akinduyite et al.
-([CITE: verify — Fingerprint-Based Attendance Management System]) implemented a
-fingerprint attendance system for a tertiary institution and reported reduced
-administrative time and elimination of proxy attendance relative to the manual
-register it replaced.
-
-Studies of public-sector deployments report broadly positive outcomes for
-accountability. Research on biometric fingerprint technology in public
-organisations found that employees perceived the technology as a reliable means
-of addressing unauthorised absence, with reported positive contributions to
-attendance management and productivity ([CITE: verify — public sector biometric
-attendance study]).
-
-A common limitation across this literature is that reported evaluations
-frequently emphasise administrative benefits and user perception while providing
-limited quantitative accuracy data — specifically, few report FAR, FRR or
-failure-to-enrol rates measured in deployment.
-
-### 2.4.2 Face-based attendance systems
-
-Face recognition attendance systems have received substantial attention,
-particularly for classroom attendance where a single camera may record many
-individuals simultaneously ([CITE: face recognition attendance study]).
-Reported advantages include contactless operation — which acquired additional
-salience following the COVID-19 pandemic — and the absence of specialised
-hardware beyond a camera.
-
-Reported limitations are consistent across studies: sensitivity to illumination,
-degraded accuracy with pose variation, and vulnerability to photographic spoofing
-where no liveness detection is implemented. Several studies acknowledge the
-spoofing vulnerability without implementing a countermeasure
+**Face-based attendance systems** have received substantial attention,
+particularly for classroom use where one camera may record many individuals
+([CITE: face recognition attendance study]). Reported advantages are
+contactless operation and the absence of specialised hardware. Reported
+limitations are consistent: sensitivity to illumination, degradation with pose
+variation, and vulnerability to photographic spoofing. Several studies
+acknowledge the spoofing vulnerability without implementing a countermeasure
 ([CITE: verify]).
 
-### 2.4.3 Multimodal attendance systems
+**Multimodal attendance systems** are comparatively rare. Where implemented,
+fingerprint and face is the usual pairing, and reported accuracy exceeds either
+modality alone, consistent with Ross and Jain (2003)
+([CITE: multimodal attendance implementation]). However, the reviewed
+implementations predominantly use **parallel** fusion, requiring both
+modalities for every transaction. Serial architectures — invoking the second
+only on failure of the first — are little examined, despite their throughput
+advantage where many staff arrive within a short window.
 
-Studies implementing multimodal attendance systems are comparatively fewer.
-Where implemented, the combination of fingerprint and face is the most common
-pairing, and reported accuracy generally exceeds that of either modality alone,
-consistent with the theoretical expectation established by Ross and Jain (2003)
-([CITE: multimodal attendance implementation]).
-
-However, the reviewed implementations predominantly employ **parallel** fusion,
-requiring both modalities for every transaction. Few examine serial or fallback
-architectures in which the second modality is invoked only on failure of the
-first, despite the throughput advantages such architectures offer in settings
-where large numbers of staff arrive within a short window — precisely the
-condition at a hospital shift change.
-
-### 2.4.4 Biometric systems in healthcare settings
-
-Literature on biometrics in healthcare concentrates predominantly on **patient**
-identification, addressing duplicate records, identity fraud and the safety
-consequences of misidentification ([CITE: patient identification biometrics
-review]). Staff attendance receives markedly less attention.
-
-Where staff-facing biometric systems in healthcare are discussed, the emphasis
-is typically on **access control** to restricted areas such as pharmacies and
-operating theatres, rather than on attendance recording
-([CITE: healthcare access control study]).
-
-The occupational degradation of fingerprint quality among healthcare workers is
-acknowledged in the sensor literature but is rarely treated as a design
-constraint in attendance system studies. This study treats it as the primary
-motivation for the multimodal architecture.
-
----
+**Biometrics in healthcare** concentrates overwhelmingly on *patient*
+identification, addressing duplicate records and misidentification safety
+([CITE: patient identification biometrics review]). Staff-facing systems are
+discussed mainly in terms of access control to restricted areas rather than
+attendance ([CITE: healthcare access control study]). The occupational
+degradation of fingerprint quality among healthcare workers is acknowledged in
+the sensor literature but rarely treated as a design constraint in attendance
+studies — this study treats it as the primary motivation for multimodality.
 
 ## 2.5 Research Gap
 
