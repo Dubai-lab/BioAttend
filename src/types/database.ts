@@ -338,6 +338,22 @@ export type Database = {
         }
         Returns: { ok: boolean; reason?: string; code?: string }
       }
+      staff_attendance_lookup: {
+        Args: {
+          p_kiosk_code: string
+          p_kiosk_token: string
+          p_staff_id: string
+          p_days?: number
+        }
+        Returns: {
+          ok: boolean
+          reason?: string
+          staff_name?: string
+          staff_no?: string
+          days?: number
+          records?: unknown[]
+        }
+      }
       verify_face_by_staff_no: {
         Args: {
           p_kiosk_code: string

@@ -23,6 +23,7 @@ import {
   type FaceScanProgress,
 } from '@/lib/face/kiosk-face'
 import { StaffNumberEntry } from '@/components/kiosk/StaffNumberEntry'
+import { MyRecord, type MyRecordData } from '@/components/kiosk/MyRecord'
 import { cn } from '@/lib/utils'
 import type { AttendanceVerdict } from '@/types/database'
 
@@ -57,6 +58,8 @@ type Screen =
   | { state: 'enter_number' }
   | { state: 'face'; message: string; progress?: FaceScanProgress }
   | { state: 'error'; message: string }
+  /** Staff member viewing their own record after identifying themselves. */
+  | { state: 'my_record'; data: MyRecordData }
 
 export function Kiosk() {
   const [credentials, setCredentials] = useState<KioskCredentials | null>(() => {
@@ -72,6 +75,10 @@ export function Kiosk() {
   // The scan loop must not restart while someone is typing. A ref rather than
   // state so the running loop sees the change without being torn down.
   const awaitingInput = useRef(false)
+  // What the next successful identification should do. A lookup uses exactly
+  // the same identification path as a check-in — the only difference is what
+  // happens once the person is known, so there is no second, weaker way in.
+  const intent = useRef<'check_in' | 'lookup'>('check_in')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -117,6 +124,32 @@ export function Kiosk() {
     }
   }, [credentials])
 
+  /** Show a staff member their own recent attendance. */
+  const showRecord = useCallback(async (creds: KioskCredentials, staffId: string) => {
+    const { data, error } = await supabase.rpc('staff_attendance_lookup', {
+      p_kiosk_code: creds.code,
+      p_kiosk_token: creds.token,
+      p_staff_id: staffId,
+      p_days: 30,
+    })
+
+    intent.current = 'check_in'
+
+    if (error) {
+      setScreen({ state: 'error', message: error.message })
+      return
+    }
+
+    const result = data as { ok: boolean; reason?: string } & MyRecordData
+    if (!result?.ok) {
+      setScreen({ state: 'unknown' })
+      return
+    }
+
+    awaitingInput.current = true // hold the scan loop while they read
+    setScreen({ state: 'my_record', data: result })
+  }, [])
+
   /** Write the attendance row and show the verdict. Shared by both methods. */
   const record = useCallback(
     async (
@@ -125,6 +158,11 @@ export function Kiosk() {
       method: 'fingerprint' | 'face',
       confidence: number | null,
     ) => {
+      if (intent.current === 'lookup') {
+        await showRecord(creds, staffId)
+        return
+      }
+
       const { data, error } = await supabase.rpc('record_attendance', {
         p_kiosk_code: creds.code,
         p_kiosk_token: creds.token,
@@ -140,7 +178,7 @@ export function Kiosk() {
 
       setScreen({ state: 'result', verdict: data as AttendanceVerdict })
     },
-    [],
+    [showRecord],
   )
 
   /**
@@ -442,7 +480,15 @@ export function Kiosk() {
         )}
       </div>
 
-      {screen.state === 'enter_number' ? (
+      {screen.state === 'my_record' ? (
+        <MyRecord
+          data={screen.data}
+          onClose={() => {
+            awaitingInput.current = false
+            setScreen({ state: 'idle' })
+          }}
+        />
+      ) : screen.state === 'enter_number' ? (
         <StaffNumberEntry
           value={staffNumber}
           onChange={setStaffNumber}
@@ -457,9 +503,25 @@ export function Kiosk() {
         <ScreenBody screen={screen} fingerprintAvailable={fingerprintAvailable} />
       )}
 
-      {/* Hidden while the keypad is up: it is absolutely positioned and would
-          otherwise sit on top of the Cancel and Continue buttons. */}
-      {screen.state !== 'enter_number' && (
+      {/* Offered only at idle. Pressing it does not bypass anything — the next
+          scan identifies the person exactly as a check-in would, and only then
+          shows their record instead of recording attendance. */}
+      {screen.state === 'idle' && (
+        <button
+          type="button"
+          onClick={() => {
+            intent.current = 'lookup'
+            setScreen({ state: 'scanning' })
+          }}
+          className="absolute bottom-16 rounded-card border border-slate-700 px-6 py-3 text-base text-slate-300 transition-colors hover:bg-shell-900"
+        >
+          View my attendance record
+        </button>
+      )}
+
+      {/* Hidden while the keypad or a record is up: it is absolutely
+          positioned and would otherwise overlap their controls. */}
+      {screen.state !== 'enter_number' && screen.state !== 'my_record' && (
         <p className="absolute bottom-6 text-xs text-slate-600">
           {credentials.code}
           {fingerprintAvailable
@@ -513,7 +575,7 @@ function ScreenBody({
     )
   }
 
-  if (screen.state === 'enter_number') return null
+  if (screen.state === 'enter_number' || screen.state === 'my_record') return null
 
   if (screen.state === 'face') {
     return (
