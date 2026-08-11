@@ -101,9 +101,12 @@
    ============================================================ */
 
 @layer components {
+  /* Fixed to the viewport, never scrolls. A check-in station that can be
+     scrolled hides its own controls: a person standing at it has no reason to
+     expect content below the fold, and will not look for it. */
   .kiosk-root {
-    @apply min-h-screen w-full flex flex-col items-center justify-center
-           bg-shell-950 text-white select-none cursor-none;
+    @apply h-screen w-full overflow-hidden flex flex-col items-center
+           justify-center bg-shell-950 text-white select-none;
   }
 
   .kiosk-headline {

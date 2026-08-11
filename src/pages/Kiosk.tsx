@@ -386,7 +386,7 @@ export function Kiosk() {
   }
 
   return (
-    <div className="kiosk-root px-8">
+    <div className="kiosk-root px-6">
       <div className="absolute right-8 top-6 text-right">
         <p className="id-text text-3xl font-semibold text-white">{format(now, 'HH:mm')}</p>
         <p className="text-sm text-slate-400">{format(now, 'EEEE d MMMM yyyy')}</p>
@@ -457,9 +457,16 @@ export function Kiosk() {
         <ScreenBody screen={screen} fingerprintAvailable={fingerprintAvailable} />
       )}
 
-      <p className="absolute bottom-6 text-xs text-slate-600">
-        {credentials.code} · Place your finger on the reader
-      </p>
+      {/* Hidden while the keypad is up: it is absolutely positioned and would
+          otherwise sit on top of the Cancel and Continue buttons. */}
+      {screen.state !== 'enter_number' && (
+        <p className="absolute bottom-6 text-xs text-slate-600">
+          {credentials.code}
+          {fingerprintAvailable
+            ? ' · Place your finger on the reader'
+            : ' · Face check-in'}
+        </p>
+      )}
     </div>
   )
 }
