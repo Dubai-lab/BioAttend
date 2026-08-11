@@ -66,6 +66,9 @@ export function Kiosk() {
   const [screen, setScreen] = useState<Screen>({ state: 'idle' })
   const [now, setNow] = useState(new Date())
   const [staffNumber, setStaffNumber] = useState('')
+  // Tracks whether the fingerprint reader is usable, so the idle screen can
+  // tell people what to actually do rather than pointing at a dead sensor.
+  const [fingerprintAvailable, setFingerprintAvailable] = useState(true)
   // The scan loop must not restart while someone is typing. A ref rather than
   // state so the running loop sees the change without being torn down.
   const awaitingInput = useRef(false)
@@ -282,6 +285,7 @@ export function Kiosk() {
 
     try {
       const match = await bridge.identify()
+      setFingerprintAvailable(true)
 
       if (!match.matched || match.slot === undefined) {
         console.info('[kiosk] no fingerprint match — trying face')
@@ -309,10 +313,22 @@ export function Kiosk() {
 
       await record(creds, staffId, 'fingerprint', match.score ?? null)
     } catch (err) {
-      // Only the service being unreachable takes the station down. Everything
-      // else is recoverable by pressing again.
+      // The fingerprint service being down must not take the station down with
+      // it. A reader that fails at 6am should leave face check-in working, not
+      // strand a whole shift — the entire point of a second modality is that
+      // one failing does not stop the other.
       if (err instanceof BridgeOfflineError) {
-        setScreen({ state: 'error', message: 'Fingerprint service is not running.' })
+        setFingerprintAvailable(false)
+        if (streamRef.current) {
+          console.info('[kiosk] fingerprint service unavailable — face only')
+          await tryFaceIdentify(creds)
+          return
+        }
+        // Neither modality is available. Now it is genuinely out of service.
+        setScreen({
+          state: 'error',
+          message: 'Neither the fingerprint reader nor a camera is available.',
+        })
         return
       }
 
@@ -438,7 +454,7 @@ export function Kiosk() {
           }}
         />
       ) : (
-        <ScreenBody screen={screen} />
+        <ScreenBody screen={screen} fingerprintAvailable={fingerprintAvailable} />
       )}
 
       <p className="absolute bottom-6 text-xs text-slate-600">
@@ -448,8 +464,30 @@ export function Kiosk() {
   )
 }
 
-function ScreenBody({ screen }: { screen: Screen }) {
+function ScreenBody({
+  screen,
+  fingerprintAvailable,
+}: {
+  screen: Screen
+  fingerprintAvailable: boolean
+}) {
   if (screen.state === 'idle' || screen.state === 'scanning') {
+    // With the reader unavailable the station still works by face, so it
+    // prompts for that instead of pointing at a sensor that will not respond.
+    if (!fingerprintAvailable) {
+      return (
+        <div className="flex flex-col items-center gap-8">
+          <div className="flex size-40 items-center justify-center rounded-full border-4 border-slate-700">
+            <ScanFace className="size-20 text-info-500" aria-hidden="true" />
+          </div>
+          <p className="kiosk-headline text-white">Look at the camera</p>
+          <p className="kiosk-subhead">
+            The fingerprint reader is unavailable — check in by face
+          </p>
+        </div>
+      )
+    }
+
     return (
       <div className="flex flex-col items-center gap-8">
         <div
