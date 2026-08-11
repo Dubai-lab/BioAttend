@@ -316,7 +316,23 @@ them.
 database holds the authoritative copies, so a failed reader is replaced by
 synchronising a new one and no biometric data is lost with the hardware.
 
-### 4.6.3 Access control design
+### 4.6.3 Data dictionary
+
+Every table, field, data type, nullability and purpose is documented in the
+data dictionary presented in **Section 4.6.3 (separate document
+`data-dictionary.md`, to be inserted here)**, covering all fifteen tables
+across the five groups above.
+
+Three conventions hold throughout. Every table carries a creation timestamp,
+and those that can be modified carry a modification timestamp maintained by a
+database trigger rather than by the application, so the value cannot be
+falsified by a client. Foreign keys to reference data restrict deletion, so a
+department in use cannot be removed; foreign keys to staff cascade, so removing
+a staff member removes their biometric data with them. **No table stores a raw
+biometric image** — only templates and embeddings, neither of which can be
+reversed into the original sample.
+
+### 4.6.4 Access control design
 
 Access is enforced by row-level security policies evaluated by the database on
 every query, rather than by the application. The full matrix is given in
@@ -330,7 +346,7 @@ either**: it holds only the public API key, and facial matching is performed by
 a server-side function that receives a freshly computed embedding and returns a
 decision. A compromised station therefore discloses nothing.
 
-### 4.6.4 Attendance recording logic
+### 4.6.5 Attendance recording logic
 
 Attendance recording is implemented as a single server-side function which is
 the only path by which an attendance record can be created. Its logic:
@@ -373,7 +389,7 @@ the only path by which an attendance record can be created. Its logic:
 
 ---
 
-### 4.6.5 User interface design
+### 4.6.6 User interface design
 
 The system presents two interfaces with deliberately different characteristics.
 
