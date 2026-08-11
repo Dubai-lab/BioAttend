@@ -122,6 +122,18 @@ Useful when editing, so claims are not accidentally altered.
   verification** when either condition fails. Earlier drafts described a
   stricter design; that has been corrected.
 
+## Diagrams
+
+`diagrams-guide.md` describes all 18 figures and 12 screenshots — the type of
+each, what it must contain, and what an examiner looks for.
+
+`diagram-prompts.md` gives a ready-to-paste prompt per figure, written so a
+drawing tool produces valid notation rather than something that merely looks
+like a UML diagram.
+
+Figures 5.2, 5.3 and 5.4 are excluded from that: they plot measured data and
+must be built in Excel from the exported CSV.
+
 ## Related
 
 The system itself is documented in the repository root `README.md`, including
