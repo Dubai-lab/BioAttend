@@ -153,7 +153,44 @@ Secondary actor at the bottom: **Check-in station**, connected to UC6–UC9.
 **Annotate near the staff member: "no login — no account exists".** It is the
 most unusual thing about the model and an examiner will ask about it.
 
-### Figure 4.4 — Entity Relationship Diagram
+### Figure 4.4 — Context diagram (DFD level 0)
+**Type:** Data flow diagram, Gane–Sarson notation.
+
+One process — the whole system — surrounded by five external entities: staff
+member, supervisor, administrator, fingerprint reader, camera. No data stores;
+they belong to level 1 and below.
+
+**Annotate that nothing resembling a credential flows from the staff member.**
+The absence is the design decision.
+
+### Figure 4.5 — Data flow diagram, level 1
+**Type:** Data flow diagram, Gane–Sarson notation.
+
+Six processes — 1.0 Enrol staff, 2.0 Manage roster, 3.0 Capture attendance,
+4.0 Review and approve, 5.0 Report and export, 6.0 Administer system — and six
+data stores: D1 Staff, D2 Biometric templates and embeddings, D3 Roster,
+D4 Attendance, D5 Attempt log, D6 Configuration.
+
+Two flows carry the argument of the chapter and should be visually emphasised:
+
+- **D2 → 3.0 is read-only.** Attendance capture reads enrolled biometrics and
+  never writes to them. Enrolment is the only path into D2.
+- **3.0 → D5 fires on every path**, refusals included. The attempt log is not
+  an error log; it is the complete record of what the system was asked.
+
+### Figure 4.6 — Data flow diagram, level 2 (process 3.0)
+**Type:** Data flow diagram, Gane–Sarson notation.
+
+Decomposes capture into 3.1 Identify by fingerprint, 3.2 Identify by face,
+3.3 Verify asserted identity, 3.4 Validate against shift window, 3.5 Record
+attendance, 3.6 Log attempt.
+
+The cascade 3.1 → 3.2 → 3.3 must read as a fall-through, because it is the
+serial fusion described in §4.4.4: fingerprint first, face on no match, staff
+number plus 1:1 verification when face is ambiguous. Drawn as three parallel
+branches it says something the system does not do.
+
+### Figure 4.7 — Entity Relationship Diagram
 **Type:** ERD, crow's foot notation.
 
 All fifteen tables from Appendix D. Suggested layout:
@@ -172,7 +209,7 @@ unique constraints explicitly** — `(staff_id, shift_date)` on attendance and
 This is the largest diagram and the one examined most closely. Give it a full
 page in landscape if needed.
 
-### Figure 4.5 — Class diagram
+### Figure 4.8 — Class diagram
 **Type:** UML class diagram, application layer only (not the database).
 
 Suggested classes with key methods:
@@ -190,7 +227,7 @@ Suggested classes with key methods:
 Show `EnrolmentService` depending on both `FingerprintBridge` and
 `FaceService`; `AttendanceService` depending on all three capture classes.
 
-### Figure 4.6 — Attendance recording activity diagram
+### Figure 4.9 — Attendance recording activity diagram
 **Type:** UML activity diagram with decision nodes.
 
 **This is the most important diagram in the thesis.** It encodes both rules.
@@ -223,7 +260,7 @@ RECORD check-out
 Every terminal node writes to the attempt log — annotate that once rather than
 on each branch.
 
-### Figure 4.7 — Sequence diagram, fingerprint check-in
+### Figure 4.10 — Sequence diagram, fingerprint check-in
 **Type:** UML sequence diagram.
 
 Lifelines: `Staff member`, `Kiosk (browser)`, `Fingerprint bridge`, `Reader`,
@@ -237,7 +274,7 @@ score)** → verify credential → resolve shift → evaluate window → return 
 **Emphasise the credential travelling with the attendance call** — it is the
 mechanism behind Rule 1.
 
-### Figure 4.8 — Sequence diagram, fallback path
+### Figure 4.11 — Sequence diagram, fallback path
 **Type:** UML sequence diagram.
 
 Lifelines: `Staff member`, `Kiosk`, `Fingerprint bridge`, `Face service`,
@@ -250,7 +287,7 @@ number → staff enters number → verify_face_by_staff_no → verified → reco
 This diagram illustrates the design decision in §4.4.5 and directly answers
 Research Question 4.
 
-### Figure 4.9 — Interface wireframes
+### Figure 4.12 — Interface wireframes
 **Type:** Two side-by-side wireframes, drawn to relative scale.
 
 Left: **console** — sidebar, main content area, context rail, small type,
@@ -354,14 +391,19 @@ stopped. Both demonstrate claims you make in the text.
 | 1 | 1 | — |
 | 2 | 2 | — |
 | 3 | 1 | — |
-| 4 | 9 | — |
+| 4 | 12 | — |
 | 5 | 5 | 12 |
-| **Total** | **18** | **12** |
+| **Total** | **21** | **12** |
 
 At roughly a third of a page each for figures and a quarter for screenshots,
-expect **15–18 pages** of figures. With ~40 pages of text plus front matter,
+expect **17–20 pages** of figures. With ~40 pages of text plus front matter,
 references and appendices, that lands close to your 65-page target.
 
-**If you need to cut figures**, the ones carrying least weight are 4.5 (class
+**If you need to cut figures**, the ones carrying least weight are 4.8 (class
 diagram) and 5.1 (recovery flowchart) — both are described adequately in prose.
-Never cut 2.1, 4.4, 4.6 or 5.3.
+Figure 4.6 can also go if space is tight, since 4.5 already shows the six
+processes and §4.4.4 explains the cascade in prose.
+
+Never cut 2.1, 4.7 (ERD), 4.9 (attendance logic) or 5.3. Departments that
+require data flow diagrams treat 4.4 and 4.5 as mandatory — check yours before
+touching them.

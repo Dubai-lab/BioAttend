@@ -293,7 +293,66 @@ principal subject of the system — has no account and never authenticates is
 the most consequential feature of this model, and is what prevents attendance
 being recorded from anywhere other than a registered station.
 
-### 4.6.2 Database design
+---
+
+> **[DIAGRAM 4.3]** — Use case diagram.
+
+---
+
+### 4.6.2 Data flow modelling
+
+The use case model states what the system does for whom. Data flow diagrams
+state what moves between those functions and where it rests, which is the view
+that exposes the biometric data paths.
+
+**Context level (Figure 4.4).** The system appears as a single process
+exchanging data with five external entities: the staff member, the departmental
+supervisor, the administrator, the fingerprint reader and the camera. The staff
+member supplies only a biometric sample and receives only a verdict — no
+credential passes in either direction, because none exists.
+
+**Level 1 (Figure 4.5)** decomposes the system into six processes and six data
+stores:
+
+| Process | Function |
+|---|---|
+| 1.0 Enrol staff | Create records, record consent, capture biometrics |
+| 2.0 Manage roster | Assign shifts to staff by date |
+| 3.0 Capture attendance | Identify, validate against shift, record |
+| 4.0 Review and approve | Present exceptions, record supervisor sign-off |
+| 5.0 Report and export | Produce attendance and attempt datasets |
+| 6.0 Administer system | Console users, stations, thresholds |
+
+| Store | Contents |
+|---|---|
+| D1 | Staff records |
+| D2 | Biometric templates and embeddings |
+| D3 | Shift roster |
+| D4 | Attendance records |
+| D5 | Recognition attempt log |
+| D6 | Configuration |
+
+Two flows in this diagram carry the design's central constraints. Process 3.0
+reads D2 but never writes to it — attendance capture cannot alter enrolment.
+And every path through 3.0 writes to D5, including those that refuse, so a
+rejected scan leaves evidence rather than nothing.
+
+**Level 2 (Figure 4.6)** decomposes process 3.0, which is where identification,
+validation and refusal all occur, and is therefore the only process whose
+internal structure is not self-evident from the level above.
+
+---
+
+> **[DIAGRAM 4.4]** — Context diagram (DFD level 0).
+>
+> **[DIAGRAM 4.5]** — Data flow diagram, level 1.
+>
+> **[DIAGRAM 4.6]** — Data flow diagram, level 2: decomposition of process 3.0,
+> Capture attendance.
+
+---
+
+### 4.6.3 Database design
 
 The database comprises fifteen tables across reference data, people,
 biometrics, devices and operations. The full schema with design notes is
@@ -316,7 +375,15 @@ them.
 database holds the authoritative copies, so a failed reader is replaced by
 synchronising a new one and no biometric data is lost with the hardware.
 
-### 4.6.3 Data dictionary
+---
+
+> **[DIAGRAM 4.7]** — Entity-Relationship Diagram, all fifteen tables.
+>
+> **[DIAGRAM 4.8]** — Class diagram of the application service layer.
+
+---
+
+### 4.6.4 Data dictionary
 
 Every table, field, data type, nullability and purpose is documented in the
 data dictionary presented in **Section 4.6.3 (separate document
@@ -332,7 +399,7 @@ a staff member removes their biometric data with them. **No table stores a raw
 biometric image** — only templates and embeddings, neither of which can be
 reversed into the original sample.
 
-### 4.6.4 Access control design
+### 4.6.5 Access control design
 
 Access is enforced by row-level security policies evaluated by the database on
 every query, rather than by the application. The full matrix is given in
@@ -346,7 +413,7 @@ either**: it holds only the public API key, and facial matching is performed by
 a server-side function that receives a freshly computed embedding and returns a
 decision. A compromised station therefore discloses nothing.
 
-### 4.6.5 Attendance recording logic
+### 4.6.6 Attendance recording logic
 
 Attendance recording is implemented as a single server-side function which is
 the only path by which an attendance record can be created. Its logic:
@@ -371,25 +438,25 @@ the only path by which an attendance record can be created. Its logic:
 
 ---
 
-> **[DIAGRAM 4.6]** — Activity diagram for attendance recording, following the
+> **[DIAGRAM 4.9]** — Activity diagram for attendance recording, following the
 > ten steps above. Include the decision diamonds for credential validity, staff
 > active, shift found, window state and existing record. This is the most
 > important diagram in the chapter — it encodes the two rules the system rests
 > on.
 
-> **[DIAGRAM 4.7]** — Sequence diagram for UC6 (check in by fingerprint).
+> **[DIAGRAM 4.10]** — Sequence diagram for UC6 (check in by fingerprint).
 > Lifelines: Staff member, Kiosk (browser), Bridge, Fingerprint device,
 > Database. Show the credential accompanying the attendance call, and the
 > verdict returning to the display.
 
-> **[DIAGRAM 4.8]** — Sequence diagram for the fallback path: fingerprint
+> **[DIAGRAM 4.11]** — Sequence diagram for the fallback path: fingerprint
 > fails → face identification → ambiguous → staff number requested → one-to-one
 > verification → attendance recorded. This diagram illustrates the design
 > decision in 4.4.5.
 
 ---
 
-### 4.6.6 User interface design
+### 4.6.7 User interface design
 
 The system presents two interfaces with deliberately different characteristics.
 
@@ -410,7 +477,7 @@ produce an incoherent system.
 
 ---
 
-> **[DIAGRAM 4.9]** — Interface wireframes: console layout (sidebar, main
+> **[DIAGRAM 4.12]** — Interface wireframes: console layout (sidebar, main
 > content, context rail) beside the kiosk layout (single centred message). Show
 > them at relative scale to make the density difference visible.
 

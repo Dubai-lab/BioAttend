@@ -124,12 +124,18 @@ Useful when editing, so claims are not accidentally altered.
 
 ## Diagrams
 
-`diagrams-guide.md` describes all 18 figures and 12 screenshots — the type of
+`diagrams-guide.md` describes all 21 figures and 12 screenshots — the type of
 each, what it must contain, and what an examiner looks for.
 
 `diagram-prompts.md` gives a ready-to-paste prompt per figure, written so a
 drawing tool produces valid notation rather than something that merely looks
 like a UML diagram.
+
+`chapter-04-diagram-prompts.md` holds the twelve Chapter Four prompts on their
+own, because that chapter carries the design figures — including the three data
+flow diagrams (context, level 1, and level 2 decomposing attendance capture) —
+and each prompt has to pin the notation down line by line. It ends with a table
+of the error each figure is most likely to come back with.
 
 Figures 5.2, 5.3 and 5.4 are excluded from that: they plot measured data and
 must be built in Excel from the exported CSV.
