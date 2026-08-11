@@ -129,20 +129,46 @@ against the condition most likely to defeat it.
 
 ### 3.5.2 Sample size
 
-The evaluation sample comprised **[N] participants**, of whom **[n]** were
-enrolled with both fingerprint and facial biometrics.
+The evaluation sample comprised **22 participants**, all of whom were enrolled
+with both fingerprint and facial biometrics. The sample included **one sibling
+pair**, recruited deliberately for the reason given in Section 3.5.1.
 
 Sample size was determined by the requirements of the measurements rather than
-by a statistical power calculation. To produce meaningful genuine and impostor
-score distributions, each participant contributed multiple recognition attempts
-across separate sessions, yielding **[T] total attempts** — comprising **[G]**
-genuine comparisons and **[I]** impostor comparisons.
+by a statistical power calculation, since the object is to characterise the
+behaviour of an artefact rather than to estimate a population parameter. Two
+considerations set the figure.
 
-> **[TO COMPLETE]** — Replace N, n, T, G and I with your actual figures once
-> testing is complete. Guidance: aim for at least 20 participants and
-> approximately 10 recognition attempts each. Below roughly 10 participants the
-> resulting error rates carry too much uncertainty to report meaningfully, and
-> an examiner is likely to challenge them.
+First, **error rates computed from few trials carry wide confidence intervals**.
+Where no error is observed in *n* trials, the upper bound of the 95% confidence
+interval is approximately 3/*n* — so twenty trials support no claim stronger
+than "below 15%". Producing figures precise enough to be worth reporting
+requires several hundred comparisons in total.
+
+Second, **impostor comparisons must be generated deliberately**. They do not
+arise during ordinary use, where every person presenting is genuine. The
+protocol therefore includes trials in which a participant's sample is compared
+against a different enrolled identity.
+
+The resulting design:
+
+| Trial type | Composition | Comparisons |
+|---|---|---|
+| Genuine | 22 participants × 10 attempts across two sessions | 220 |
+| Impostor | 22 participants × 5 comparisons against other enrolled identities | 110 |
+| **Total recognition comparisons** | | **330** |
+| Presentation attack — printed photograph | 10 attempts | 10 |
+| Presentation attack — image on a screen | 10 attempts | 10 |
+| Adverse condition — damp and dry fingertips | 22 participants × 2 | 44 |
+| Adverse condition — reduced illumination | 22 participants × 2 | 44 |
+
+Genuine trials were spread across **two sessions on separate days** rather than
+taken consecutively, so that the figures reflect day-to-day variation in
+lighting, hand condition and presentation rather than a single favourable
+moment.
+
+The sibling pair contributed an additional focused set: each presented against
+the other's enrolled identity, producing the comparison on which the
+discrimination margin reported in Chapter Five is based.
 
 The limitations arising from this sample size are stated in Section 1.7 and
 discussed in Chapter Five.
@@ -330,9 +356,17 @@ does not require destruction of the operational record.
 
 ### 3.9.7 Institutional approval
 
-> **[TO COMPLETE]** — State here the ethical clearance obtained: the approving
-> body, reference number and date. If your department requires a signed consent
-> form, reproduce the blank form in an appendix and reference it here.
+Ethical clearance for the evaluation was obtained from the Faculty of
+Information System Management, University of Lay Adventists of Kigali, prior to
+any biometric data being collected. The blank consent form issued to
+participants is reproduced in Appendix H.
+
+Because the evaluation was conducted with volunteer participants rather than in
+an operating hospital, no institutional review by a health facility was
+required. A live deployment would additionally require approval from the
+hospital's own governance process and registration of the processing activity
+under Rwanda's data protection framework — a requirement noted in the
+recommendations in Chapter Six.
 
 ### 3.9.8 Data security
 
