@@ -20,6 +20,7 @@ import {
   needsStaffNumber,
   scanForFace,
   verifyFaceByStaffNumber,
+  type FaceScanProgress,
 } from '@/lib/face/kiosk-face'
 import { StaffNumberEntry } from '@/components/kiosk/StaffNumberEntry'
 import { cn } from '@/lib/utils'
@@ -54,7 +55,7 @@ type Screen =
   | { state: 'unknown'; detail?: string }
   /** Fingerprint failed; asking who they are before the camera confirms it. */
   | { state: 'enter_number' }
-  | { state: 'face'; message: string }
+  | { state: 'face'; message: string; progress?: FaceScanProgress }
   | { state: 'error'; message: string }
 
 export function Kiosk() {
@@ -160,7 +161,11 @@ export function Kiosk() {
       setScreen({ state: 'face', message: 'Look at the camera' })
 
       try {
-        const scan = await scanForFace(video, { timeoutMs: 7000 })
+        const scan = await scanForFace(video, {
+          timeoutMs: 7000,
+          onProgress: (progress) =>
+            setScreen({ state: 'face', message: progress.message, progress }),
+        })
 
         if (!scan.ok) {
           if (scan.reason === 'spoof') {
@@ -221,7 +226,11 @@ export function Kiosk() {
       setScreen({ state: 'face', message: 'Look at the camera' })
 
       try {
-        const scan = await scanForFace(video, { timeoutMs: 8000 })
+        const scan = await scanForFace(video, {
+          timeoutMs: 8000,
+          onProgress: (progress) =>
+            setScreen({ state: 'face', message: progress.message, progress }),
+        })
 
         if (!scan.ok) {
           setScreen({
@@ -371,10 +380,51 @@ export function Kiosk() {
         <Logo tone="light" size="sm" />
       </div>
 
-      {/* The camera runs but is not shown: a live self-view at a check-in
-          station invites people to pose, and the face path is a fallback,
-          not the main event. */}
-      <video ref={videoRef} playsInline muted className="pointer-events-none absolute size-px opacity-0" />
+      {/*
+        The preview is shown only while the camera is being used, never at
+        idle. A permanent mirror at a check-in station invites people to
+        linger, but hiding it entirely leaves someone with no way to tell
+        whether they are in shot — which is worse. Every comparable system
+        (phone face unlock, airport gates) shows framing feedback.
+      */}
+      <div
+        className={cn(
+          'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity',
+          screen.state === 'face' ? 'z-10 opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        style={{ marginTop: screen.state === 'face' ? '-40px' : 0 }}
+      >
+        <div
+          className={cn(
+            'relative size-72 overflow-hidden rounded-full border-4 transition-colors',
+            screen.state === 'face' && screen.progress?.detected
+              ? 'border-success-500'
+              : 'border-slate-600',
+          )}
+        >
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            className="size-full -scale-x-100 object-cover"
+          />
+        </div>
+
+        {/* Progress pips: one per frame required before the face is accepted. */}
+        {screen.state === 'face' && screen.progress && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            {Array.from({ length: screen.progress.required }, (_, index) => (
+              <span
+                key={index}
+                className={cn(
+                  'size-2.5 rounded-full transition-colors',
+                  index < screen.progress!.streak ? 'bg-success-500' : 'bg-slate-600',
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {screen.state === 'enter_number' ? (
         <StaffNumberEntry

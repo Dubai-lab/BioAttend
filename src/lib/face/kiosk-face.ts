@@ -51,9 +51,27 @@ export interface FaceScanSuccess {
  * Several consecutive live frames are required before embedding. A single
  * frame can catch a photo mid-wave; consecutive frames cannot.
  */
+export interface FaceScanProgress {
+  /** Is a live face currently visible? */
+  detected: boolean
+  /** Guidance to display, e.g. "Move closer". */
+  message: string
+  /** Consecutive good frames so far, against requiredFrames. */
+  streak: number
+  required: number
+}
+
 export async function scanForFace(
   video: HTMLVideoElement,
-  { timeoutMs = 8000, requiredFrames = 3 }: { timeoutMs?: number; requiredFrames?: number } = {},
+  {
+    timeoutMs = 8000,
+    requiredFrames = 3,
+    onProgress,
+  }: {
+    timeoutMs?: number
+    requiredFrames?: number
+    onProgress?: (progress: FaceScanProgress) => void
+  } = {},
 ): Promise<FaceScanSuccess | FaceScanFailure> {
   const human = await getHuman()
   const deadline = Date.now() + timeoutMs
@@ -70,6 +88,13 @@ export async function scanForFace(
         streak += 1
         bestReal = Math.max(bestReal, liveness.reading.real)
 
+        onProgress?.({
+          detected: true,
+          message: 'Hold still',
+          streak,
+          required: requiredFrames,
+        })
+
         if (streak >= requiredFrames) {
           const embedded = await faceService.embedFrame(video)
           if (!embedded.ok) {
@@ -85,6 +110,13 @@ export async function scanForFace(
         // A spoof attempt must not be averaged away by a few good frames.
         streak = 0
         lastReason = liveness.reason
+
+        onProgress?.({
+          detected: false,
+          message: guidance(liveness.reason),
+          streak: 0,
+          required: requiredFrames,
+        })
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 120))
@@ -164,6 +196,25 @@ export async function verifyFaceByStaffNumber(
 /** True when 1:N could not safely name anyone and we should ask instead. */
 export function needsStaffNumber(result: FaceIdentifyResult): boolean {
   return !result.matched && result.reason !== 'invalid_kiosk'
+}
+
+/**
+ * Short guidance for the kiosk display.
+ *
+ * Deliberately terser than the enrolment messages: this is read at two metres
+ * by someone already standing at the sensor, not by an operator at a desk.
+ */
+function guidance(reason: LivenessRejection): string {
+  switch (reason) {
+    case 'no_face':
+      return 'Look at the camera'
+    case 'multiple_faces':
+      return 'Only one person at a time'
+    case 'low_confidence':
+      return 'Move closer'
+    case 'spoof':
+      return 'A photo cannot be used'
+  }
 }
 
 export function describeFaceFailure(result: FaceVerifyByNumberResult): string {
