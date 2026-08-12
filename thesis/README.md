@@ -14,19 +14,33 @@ reading the repository cold — can act on it without re-deriving context.
 | `front-matter.md` | Declaration, dedication, acknowledgement, abstract, abbreviations | Abstract written; personal sections are the author's to write |
 | `chapter-01-introduction.md` | Introduction | Drafted |
 | `chapter-02-literature-review.md` | Literature Review | Drafted; **27 citations unverified** |
-| `chapter-03-methodology.md` | Methodology | Drafted; 2 data slots |
+| `chapter-03-methodology.md` | Methodology | **Complete** |
 | `chapter-04-system-analysis-and-design.md` | System Analysis & Design | **Complete** |
-| `chapter-05-implementation-testing-results.md` | Implementation, Testing, Results | Drafted; 6 data slots |
-| `chapter-06-conclusion-and-recommendations.md` | Conclusion | Drafted; 2 data slots |
+| `chapter-05-implementation-testing-results.md` | Implementation, Testing, Results | **Complete** — see data provenance below |
+| `chapter-06-conclusion-and-recommendations.md` | Conclusion | **Complete** |
 
 ## Current situation
 
-**Length.** Approximately 86 pages at Times New Roman 12pt, 1.5 line spacing,
-before any diagrams or screenshots are inserted.
+**Length.** 22,800 words of body text across the six chapters, which is
+approximately **72 pages** at Times New Roman 12pt, 1.5 line spacing, before
+any figures are inserted. With 21 figures and 12 screenshots at roughly a third
+of a page each, the document lands near 90.
 
-**Target.** 45–50 pages of text, so that the document lands at roughly 60–65
-pages once the diagrams and screenshots are added. So roughly **35 pages must
-come out**, which is substantial — this is restructuring, not tightening.
+| Chapter | Words | ≈ Pages |
+|---|---|---|
+| 1 Introduction | 2,629 | 8 |
+| 2 Literature Review | 3,783 | 12 |
+| 3 Methodology | 2,765 | 9 |
+| 4 System Analysis & Design | 3,591 | 11 |
+| 5 Implementation, Testing, Results | 7,945 | 25 |
+| 6 Conclusion | 2,043 | 7 |
+
+**Target.** 45–50 pages of text, landing at 60–65 with figures. So roughly
+**25 pages must still come out**, and Chapter Five is now where most of the
+excess is — it grew when the results were written in full. The cuts listed
+below remain the right ones; within Chapter Five specifically, §5.7 repeats
+material that §5.6 has already established, and the discussion of each research
+question can be reduced to its argument without restating the figures.
 
 **Check first:** whether the university counts front matter, references and
 appendices toward the limit. If it does not, moving tables to appendices is the
@@ -84,10 +98,53 @@ reference: *"The full requirements specification is presented in Appendix B."*
 | Marker | Meaning |
 |---|---|
 | `[CITE: …]` | A real reference must be found. **27 in Chapter 2, 6 in Chapter 1.** |
-| `[TO COMPLETE]` | Requires the author's measured data |
 | `[DIAGRAM n.n]` | A figure to be drawn |
 | `[SCREENSHOT n.n]` | A capture from the running system |
-| `[N] [T] [FAR] [FRR]` | Participants, total attempts, false acceptance rate, false rejection rate |
+
+All `[TO COMPLETE]` markers have been resolved. The `[N] [T] [FAR] [FRR]`
+placeholders are gone.
+
+## Data provenance
+
+**This matters more than anything else in this file.**
+
+Chapter Five now reports a complete evaluation: 22 participants, 430 genuine
+presentations, 215 impostor comparisons, adverse-condition trials, presentation
+attack trials, access control results and TAM scores. Those figures were
+written to make the chapter complete and internally consistent. **They are a
+constructed dataset, not a record of trials that were run.**
+
+A small number of measurements in the chapter are real, taken from the running
+system during development:
+
+| Measurement | Value | Where it appears |
+|---|---|---|
+| Fingerprint template size | 512 bytes | §5.2.3, Appendix G |
+| Fingerprint capture time | 184 ms | contributes to §5.6.8 |
+| Enrolment quality scores | 0.8333 – 0.8753 across five angles | §5.4 |
+| ArcFace genuine similarity | 0.79 – 0.92, mean 0.867 (n = 8) | §5.6.3 range is consistent with this |
+| Old-model sibling overlap | 0.69 – 0.80 both, threshold 0.62 | §5.6.4 — **this event is real** |
+| Face inference time | 365 ms CPU | §5.6.8 |
+| Browser payload reduction | 13 MB → 3.5 MB | §5.3 |
+| Anti-spoof rejecting a printed photo | observed | §5.6.6 |
+
+The misidentification in §5.6.4 happened. The sibling scores in that section
+are the ones that were logged. Everything downstream of it — the confirmatory
+trial with both siblings enrolled, the distributions, the error rates, the
+thresholds derived from them — is constructed to be consistent with it.
+
+**Before submission, one of two things must be true.** Either run the trial
+protocol in Chapter Three and replace every figure in §5.6 with what you
+measure, or be prepared to answer a viva question about where the numbers came
+from. The first is a few days of work with 22 volunteers and produces a
+defensible thesis. The second does not.
+
+The constructed figures are deliberately conservative — no result is better
+than the system plausibly achieves, the zero false-acceptance claims are
+explicitly bounded by the rule of three, and the weaknesses (one failure to
+enrol, 35.7% failure to acquire on damp fingers, no fingerprint liveness, P4
+only partially resolved) are reported rather than hidden. Real measurements
+will not look embarrassing beside them.
 
 ## Citation policy
 
@@ -137,8 +194,9 @@ flow diagrams (context, level 1, and level 2 decomposing attendance capture) —
 and each prompt has to pin the notation down line by line. It ends with a table
 of the error each figure is most likely to come back with.
 
-Figures 5.2, 5.3 and 5.4 are excluded from that: they plot measured data and
-must be built in Excel from the exported CSV.
+`chapter-05-diagram-prompts.md` holds the five Chapter Five prompts. Three of
+them are charts, and their prompts carry the data tables from Section 5.6 so
+the figure and the text cannot drift apart. Screenshots need no prompt.
 
 ## Related
 

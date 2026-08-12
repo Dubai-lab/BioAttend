@@ -320,7 +320,7 @@ Verified signature
 
 List the five probes as steps alongside.
 
-### Figure 5.1b — Deployment topology
+### Figure 5.2 — Deployment topology
 **Type:** Deployment diagram.
 
 Two zones. **Cloud:** static site + managed database. **Kiosk PC:** browser,
@@ -330,32 +330,42 @@ Mark which connections cross the public internet (HTTPS) and which stay local
 (loopback HTTP, USB). Annotate the loopback connection with *"requires local
 network permission"*.
 
-### Figure 5.2 — Fingerprint score distributions
-**Type:** Histogram, two series. Build in Excel from your exported CSV.
+### Figure 5.3 — Fingerprint score distributions
+**Type:** Histogram, two series.
 
-X-axis: match score. Y-axis: count. Genuine attempts in one colour, impostor in
-another. Vertical line at your operating threshold.
+X-axis: match score, 0–100. Y-axis: count. Genuine attempts in one colour,
+impostor in another. Vertical line at the operating threshold of 45.
 
-### Figure 5.3 — Face similarity distributions ⭐
-**Type:** Histogram or scatter, three series.
+The gap between the two distributions — no comparison of either type falls
+between 34 and 41 — is the result. Auto-binning will close it up if the bin
+width is set carelessly, so check that the empty band survives.
 
-Genuine comparisons, **sibling comparisons marked distinctly**, and unrelated
-impostor comparisons. Vertical line at the threshold.
+### Figure 5.4 — Face similarity distributions
+**Type:** Histogram, three series.
 
-**This is the most informative graph in your thesis.** It shows visually why
-the design changed. If you can produce it twice — once with the old model,
-once with ArcFace — the before-and-after comparison is a genuinely strong
-result.
+Genuine comparisons, unrelated impostor comparisons, and **sibling comparisons
+as a separate series in a contrasting colour**. Vertical lines at the equal
+error rate (0.632) and the operating threshold (0.68).
 
-### Figure 5.4 — FAR / FRR against threshold
+**This is the most informative graph in the thesis.** It shows visually why the
+design changed: the sibling series sits between the other two, far above the
+unrelated impostors and close enough to the genuine scores to be alarming. The
+series has only ten values against 220 and 100, so it will be drawn small —
+check it is still visible and does not disappear behind the others.
+
+### Figure 5.5 — FAR / FRR against threshold
 **Type:** Line chart, two lines crossing.
 
-X-axis: threshold, 0 to 1. Y-axis: error rate %. FAR falls as threshold rises;
-FRR rises. Mark the **crossing point as the Equal Error Rate**, and mark your
-**selected operating threshold** — which should sit to the right of the EER,
-because you deliberately favour false rejection over false acceptance.
+X-axis: threshold. Y-axis: error rate %. FAR falls as threshold rises; FRR
+rises. Mark the **crossing point as the Equal Error Rate** (0.9% at 0.632), and
+mark the **selected operating threshold** at 0.68 — to the right of the EER,
+because false rejection is deliberately preferred to false acceptance.
 
-Annotate that choice; it is a decision you must be able to defend.
+Cap the Y axis at 14%. The FRR curve reaches 80% at threshold 0.90, and an axis
+scaled to fit it compresses the crossing region to nothing.
+
+Annotate the choice of operating point; it is a decision you must be able to
+defend.
 
 ---
 

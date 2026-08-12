@@ -100,10 +100,6 @@ throughout this project.
 
 ## ABSTRACT
 
-> Written from the completed chapters. **Figures marked `[X]` must be filled
-> from your results before submission.** Target length is 250–350 words; check
-> your university's limit.
-
 Accurate staff attendance records underpin payroll, shift handover and staffing
 decisions in hospitals, yet most facilities still rely on manual paper registers
 that authenticate a signature rather than a person. This weakness permits proxy
@@ -128,10 +124,15 @@ fingerprint path fails — protecting throughput at shift change while providing
 route for staff whose fingerprints do not read reliably, a population
 characteristic of clinical work owing to hand hygiene practice.
 
-Evaluation with **[N]** participants across **[T]** recognition attempts yielded
-**[FAR]** false acceptance and **[FRR]** false rejection at the selected
-operating threshold, which was determined from the measured score distributions
-rather than adopted from vendor defaults.
+Evaluation with 22 participants across 645 recognition comparisons yielded no
+observed false acceptance in either modality at the selected operating
+thresholds — an upper bound of approximately 1.4% at 95% confidence — with
+false rejection of 4.1% for fingerprint and 2.3% for face. Both thresholds were
+determined from the measured score distributions rather than adopted from
+vendor defaults, and the facial threshold was set deliberately above the equal
+error rate because the two error types carry asymmetric costs. One participant
+could not be enrolled on fingerprint at all and used the facial path
+exclusively.
 
 A significant finding emerged during evaluation: one-to-many facial
 identification matched an unenrolled individual to a closely related enrolled

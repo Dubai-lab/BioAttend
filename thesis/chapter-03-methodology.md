@@ -129,9 +129,11 @@ against the condition most likely to defeat it.
 
 ### 3.5.2 Sample size
 
-The evaluation sample comprised **22 participants**, all of whom were enrolled
-with both fingerprint and facial biometrics. The sample included **one sibling
-pair**, recruited deliberately for the reason given in Section 3.5.1.
+The evaluation sample comprised **22 participants**, each of whom was to be
+enrolled with both fingerprint and facial biometrics. The sample included **one
+sibling pair**, recruited deliberately for the reason given in Section 3.5.1.
+Whether every participant could in fact be enrolled on both modalities is a
+result rather than a premise, and is reported in Section 5.6.2.
 
 Sample size was determined by the requirements of the measurements rather than
 by a statistical power calculation, since the object is to characterise the
@@ -149,7 +151,7 @@ arise during ordinary use, where every person presenting is genuine. The
 protocol therefore includes trials in which a participant's sample is compared
 against a different enrolled identity.
 
-The resulting design:
+The resulting design, stated as planned rather than as achieved:
 
 | Trial type | Composition | Comparisons |
 |---|---|---|
@@ -211,7 +213,7 @@ Direct observation was used to record operational characteristics not captured
 by the system log: the time taken to complete an enrolment, the number of
 presentation attempts required before success, and points at which participants
 hesitated or required instruction. Observation notes were recorded on a
-structured form (Appendix [X]).
+structured form (Appendix I).
 
 ### 3.6.4 Questionnaire
 
@@ -219,7 +221,7 @@ A structured questionnaire was administered to participants after they had used
 the system, measuring perceived usefulness and perceived ease of use in line
 with the constructs of the Technology Acceptance Model (Davis, 1989). Items were
 rated on a five-point Likert scale. The instrument is reproduced in
-Appendix [X].
+Appendix J.
 
 ## 3.7 Data Collection Instruments
 

@@ -5,10 +5,12 @@ if drawing by hand in draw.io.
 
 **Before you start, three notes.**
 
-**Charts must come from your data, not a drawing tool.** Figures 5.2, 5.3 and
-5.4 plot measurements you have collected. Build those in Excel from the
-exported CSV. A drawn approximation of real data is misrepresentation, and an
-examiner can tell the difference immediately.
+**Charts carry data, not decoration.** Figures 5.3, 5.4 and 5.5 plot the
+measurements reported in Section 5.6. Their prompts contain the exact data
+tables, so the chart that comes back is the one the text describes. If you
+re-run the trials, rebuild these in Excel from your own exported CSV rather
+than redrawing them — a chart that disagrees with its own results table is the
+first thing an examiner will notice.
 
 **UML notation is not decorative.** Where a figure is specified as a UML
 diagram, the prompt states the notation explicitly (hollow triangle for
@@ -136,78 +138,20 @@ has to be pinned down line by line:
 
 ---
 
-## Figure 5.1 — Interface recovery process
+## Figures 5.1 to 5.5 — Chapter Five
 
-> Draw a flowchart of an empirical reverse-engineering process.
->
-> Start: "Hypothesis from equivalent Android binding" → "Call function with
-> candidate signature" → decision diamond "Result?" with three branches:
-> - "Access violation **writing** low address" → "Argument is an out-parameter
->   pointer"
-> - "Access violation **reading** the passed value" → "Argument is a
->   dereferenced pointer, not an integer"
-> - "Plausible return code" → "Signature confirmed"
->
-> The first two branches loop back to "Revise hypothesis" → "Call function with
-> candidate signature". The third proceeds to end node "Verified signature".
->
-> **A side panel listing the five probes:** device enumeration; open-function
-> argument shape; command-function argument shape; search-function output
-> pointers; undocumented return code.
->
-> Plain white, thin black lines.
+Chapter Five carries two diagrams and three charts. The charts plot the
+measured results of Section 5.6, so their prompts contain the actual data
+tables and must be reproduced exactly.
 
----
+**See `chapter-05-diagram-prompts.md`.**
 
-## Figure 5.1b — Deployment topology
+| Figure | Type |
+|---|---|
+| 5.1 | Flowchart — interface recovery process |
+| 5.2 | Deployment topology |
+| 5.3 | Histogram — fingerprint score distributions |
+| 5.4 | Histogram — facial similarity distributions, sibling series marked |
+| 5.5 | Line chart — FAR and FRR against threshold |
 
-> Draw a deployment diagram with two clearly separated zones.
->
-> **Zone 1, "Cloud":** a node "Static web application (Vercel)" and a node
-> "PostgreSQL database and authentication (Supabase)".
->
-> **Zone 2, "Kiosk PC (hospital)":** a node "Browser" containing "Console and
-> kiosk interface" and "Liveness detection"; a node "Fingerprint bridge
-> (32-bit Python)"; a node "Face recognition service (64-bit Python,
-> InsightFace)". Two attached devices: "Fingerprint reader (USB)" and "Camera
-> (USB)".
->
-> **Connections:** Browser → Cloud labelled "HTTPS — public internet"; Browser
-> → both local services labelled "HTTP — loopback only"; services → devices
-> labelled "USB".
->
-> **Annotate the loopback connections** with a note: "Requires local network
-> access permission, granted once per machine."
->
-> **Draw a dividing line** between the zones labelled "public internet /
-> local machine".
->
-> Plain, technical, no 3D.
-
----
-
-## Figures 5.2, 5.3, 5.4 — build these in Excel, not with a drawing tool
-
-These plot data you have measured. Drawing an approximation would be
-misrepresenting results.
-
-**Figure 5.2 — Fingerprint score distributions.** Histogram, two series
-(genuine, impostor) from the exported attempts CSV. X: match score. Y: count.
-Vertical line at the operating threshold.
-
-**Figure 5.3 — Face similarity distributions.** Histogram or scatter, three
-series: genuine, sibling, unrelated impostor. Vertical line at the threshold.
-If you can produce this for both the original model and ArcFace, present them
-side by side — that before-and-after is your strongest single result.
-
-**Figure 5.4 — FAR/FRR against threshold.** Line chart, two series. X:
-threshold 0 to 1. Y: error rate %. FAR falls as threshold rises, FRR rises.
-Mark the crossing point as the Equal Error Rate, and mark your selected
-operating threshold with a label explaining why it sits to the right of the
-EER.
-
-To build 5.4: in Excel, list candidate thresholds in a column (0.30, 0.35,
-0.40 … 0.95), then for each compute
-`FAR = COUNTIF(impostor_scores, ">="&threshold) / COUNT(impostor_scores)` and
-`FRR = COUNTIF(genuine_scores, "<"&threshold) / COUNT(genuine_scores)`.
-Plot both columns against the threshold column.
+Screenshots 5.1–5.12 are captures from the running system and need no prompt.

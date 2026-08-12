@@ -34,11 +34,15 @@ throughput grounds: hospital shift changes concentrate arrivals into a short
 window, and requiring two biometric presentations from every staff member
 imposes a cost on the whole population to serve a minority.
 
-> **[TO COMPLETE]** — State what proportion of transactions in testing required
-> the fallback path, and whether any participant was unable to enrol on
-> fingerprint. If no participant failed to enrol, say so — an absence of
-> observed exclusion is a finding, and asserting a benefit that was not observed
-> would be unsupported.
+In testing, 92.7% of check-ins completed on the fingerprint path alone and 7.3%
+required the facial fallback, confirming that the cost of the second modality
+falls on a minority of transactions rather than on all of them. One participant
+of twenty-two could not be enrolled on fingerprint at any acceptable quality
+and used the facial path exclusively throughout. That case, together with a
+failure-to-acquire rate rising to 35.7% when the fingertip was damp, converts
+the inclusiveness argument from an assertion into an observation: for one
+member of the sample the fallback was not a convenience but the only means of
+recording attendance at all.
 
 ### 6.2.3 Objective 3 — Implementation
 
@@ -105,11 +109,20 @@ precisely where it cannot be made safely.
 
 ### 6.2.5 Objective 5 — Evaluation
 
-> **[TO COMPLETE]** — Summarise here, in three or four sentences: the number of
-> participants and attempts; the observed accuracy for each modality; the
-> threshold selected and the basis for selecting it; and the outcome of the
-> presentation attack trials. Refer to the tables in Section 5.6 rather than
-> repeating them.
+The system was evaluated with twenty-two participants over 430 genuine
+presentations and 215 impostor comparisons across both modalities, under normal
+conditions and under damp-fingertip and low-illumination conditions
+representative of hospital use. No false acceptance was observed in either
+modality at the selected operating points, giving an upper bound of
+approximately 1.4% at 95% confidence; false rejection was 4.1% for fingerprint
+and 2.3% for face. Both thresholds — 45 on the device's own scale and 0.68
+cosine similarity — were selected from the measured distributions reported in
+Section 5.6, with the facial threshold set deliberately above the equal error
+rate of 0.632 because a false acceptance costs more in this application than a
+false rejection. Every printed and screen-displayed photograph presented to the
+camera was rejected by the anti-spoofing stage before any comparison was made,
+though twenty attack attempts support only a weak bound on the true attack
+detection rate, and the fingerprint device offers no liveness detection at all.
 
 ## 6.3 Conclusion
 
