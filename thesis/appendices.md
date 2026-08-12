@@ -1,8 +1,6 @@
 # APPENDICES
 
-> Placed after the References. Most universities exclude appendices from the
-> page limit — confirm with your supervisor, since this document relies on
-> that to keep the body within length.
+> Placed after the References.
 
 ---
 
@@ -62,41 +60,7 @@
 | NFR11 | The database schema is defined in versioned migration files | Migrations under version control |
 | NFR12 | Loss of a reader device does not lose biometric data | Templates held in the database |
 
-## APPENDIX C — Use Cases
-
-| ID | Use case | Primary actor |
-|---|---|---|
-| UC1 | Enrol staff member | Administrator |
-| UC2 | Capture fingerprint | Administrator |
-| UC3 | Capture face | Administrator |
-| UC4 | Synchronise reader | Administrator |
-| UC5 | Assign shift | Supervisor / Administrator |
-| UC6 | Check in by fingerprint | Staff member |
-| UC7 | Check in by face | Staff member |
-| UC8 | Verify by staff number and face | Staff member |
-| UC9 | Check out | Staff member |
-| UC10 | View live attendance | Supervisor / Administrator |
-| UC11 | Approve exception | Supervisor / Administrator |
-| UC12 | Export records | Supervisor / Administrator |
-| UC13 | Manage console users | Administrator |
-| UC14 | Register check-in station | Administrator |
-| UC15 | Configure thresholds and windows | Administrator |
-
-### C.1 Use case specification — UC6: Check in by fingerprint
-
-| Field | Description |
-|---|---|
-| Actor | Staff member |
-| Precondition | Staff enrolled and active; templates synchronised; station registered; services running |
-| Trigger | Staff member places a finger on the sensor |
-| Main flow | 1. Station captures the image. 2. Service extracts features and searches the device library. 3. Device returns a storage slot and match score. 4. Station resolves the slot to a staff member. 5. Station submits the event with its credential. 6. Server verifies the credential. 7. Server resolves the shift for the current moment. 8. Server evaluates the time against the check-in window. 9. Server records the check-in with its classification. 10. Station displays the outcome and clears. |
-| Alternative — no match | Proceed to UC7 (face) |
-| Alternative — outside window | Refused; attempt recorded; station states when the window opens |
-| Alternative — no roster entry | Recorded and flagged as unscheduled |
-| Alternative — inactive staff | Refused; attempt recorded |
-| Postcondition | An attendance record exists, or a refused attempt is logged |
-
-## APPENDIX D — Database Schema
+## APPENDIX C — Database Schema
 
 Fifteen tables in five groups.
 
@@ -118,25 +82,7 @@ Fifteen tables in five groups.
 | | `attendance_attempts` | Every recognition attempt, including refusals |
 | | `audit_log` | Administrative actions |
 
-### D.1 Design notes
-
-**Attendance as a single row per shift date.** Check-in and check-out are
-columns on one row with a uniqueness constraint on (staff member, shift date).
-"Already checked in today" is therefore a property of the schema rather than a
-query result.
-
-**Attempts separated from records.** `attendance_attempts` records every scan
-including refusals. It provides evidence when a staff member disputes that the
-system failed them, and constitutes the dataset from which the accuracy figures
-in Chapter Five are computed — refused attempts appear nowhere else and are
-precisely what a false rejection rate is calculated from.
-
-**Slot mapping as a rebuildable cache.** The device stores a limited number of
-templates internally and returns a slot number on a match. Because the database
-holds the authoritative templates, a failed device is replaced by
-synchronising a new one; no biometric data is lost with the hardware.
-
-## APPENDIX E — Access Control Matrix
+## APPENDIX D — Access Control Matrix
 
 | Table | Administrator | Supervisor | Station (anonymous) |
 |---|---|---|---|
@@ -149,14 +95,7 @@ synchronising a new one; no biometric data is lost with the hardware.
 | `audit_log` | Read all | Read own entries | None |
 | `hospital_settings` | Read/write | Read | None |
 
-Two aspects merit note. Supervisors have no access to biometric records at all:
-they require attendance data, which does not require access to templates or
-embeddings. The check-in station cannot read biometric records either — it
-holds only the public API key, and facial matching is performed by a
-server-side function that receives a freshly computed embedding and returns a
-decision, so a compromised station discloses nothing.
-
-## APPENDIX F — Functional Test Cases
+## APPENDIX E — Functional Test Cases
 
 | ID | Req. | Test case | Expected | Result |
 |---|---|---|---|---|
@@ -196,7 +135,7 @@ All three were corrected and re-executed successfully; the failures, their
 causes and their resolutions are reported in Section 5.6.1 rather than being
 removed from the record.
 
-## APPENDIX G — Recovered Device Interface
+## APPENDIX F — Recovered Device Interface
 
 The vendor supplied a 32-bit Windows library with no header or specification.
 The interface below was recovered by systematic probing (Chapter 5, §5.2.3) and
@@ -223,7 +162,7 @@ Windows :  Function(void* context, nAddr, ...)
 exists, alongside the documented `0x09`. This code appears in no published
 documentation for the protocol family and was established by observation.
 
-## APPENDIX H — Biometric Consent Form
+## APPENDIX G — Biometric Consent Form
 
 *Reproduced as presented to participants before enrolment. Enrolment could not
 proceed in the system until all three consent statements were recorded.*
@@ -275,7 +214,7 @@ Enrolling officer: ........................  Date: .............................
 
 ---
 
-## APPENDIX I — Observation Form
+## APPENDIX H — Observation Form
 
 *Completed by the researcher during each enrolment and each trial session, to
 record the characteristics not captured by the system log.*
@@ -325,7 +264,7 @@ Participant code: P.......   Session: 1 / 2   Date: ..............
 
 ---
 
-## APPENDIX J — Questionnaire
+## APPENDIX I — Questionnaire
 
 *Administered to each participant after they had used the system. Items adapted
 from Davis (1989); responses on a five-point Likert scale where 1 = strongly

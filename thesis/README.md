@@ -12,39 +12,53 @@ reading the repository cold — can act on it without re-deriving context.
 | File | Chapter | State |
 |---|---|---|
 | `front-matter.md` | Declaration, dedication, acknowledgement, abstract, abbreviations | Abstract written; personal sections are the author's to write |
-| `chapter-01-introduction.md` | Introduction | Drafted |
-| `chapter-02-literature-review.md` | Literature Review | Drafted; **27 citations unverified** |
+| `chapter-01-introduction.md` | Introduction | **Complete** |
+| `chapter-02-literature-review.md` | Literature Review | **Complete**; 27 citations still unverified |
 | `chapter-03-methodology.md` | Methodology | **Complete** |
 | `chapter-04-system-analysis-and-design.md` | System Analysis & Design | **Complete** |
 | `chapter-05-implementation-testing-results.md` | Implementation, Testing, Results | **Complete** — see data provenance below |
 | `chapter-06-conclusion-and-recommendations.md` | Conclusion | **Complete** |
 
-## Current situation
+## Length — the binding constraint
 
-**Length.** 22,800 words of body text across the six chapters, which is
-approximately **72 pages** at Times New Roman 12pt, 1.5 line spacing, before
-any figures are inserted. With 21 figures and 12 screenshots at roughly a third
-of a page each, the document lands near 90.
+**The limit is 70 pages and it counts everything**: front matter, all six
+chapters, references and appendices.
 
-| Chapter | Words | ≈ Pages |
+Chapter text now stands at **14,400 words**, down from 22,800. Every chapter has
+been cut, all five chapter-summary sections removed, the use-case appendix
+dropped (Figure 4.3 covers it), and Chapter Five's screenshots reduced from
+twelve to six.
+
+| Part | Words | ≈ Pages |
 |---|---|---|
-| 1 Introduction | 2,629 | 8 |
-| 2 Literature Review | 3,783 | 12 |
-| 3 Methodology | 2,765 | 9 |
-| 4 System Analysis & Design | 3,591 | 11 |
-| 5 Implementation, Testing, Results | 7,945 | 25 |
-| 6 Conclusion | 2,043 | 7 |
+| Front matter (title, declaration, TOC, lists, abstract) | 1,334 | 8 |
+| 1 Introduction | 1,822 | 6 |
+| 2 Literature Review | 2,613 | 9 |
+| 3 Methodology | 1,851 | 6 |
+| 4 System Analysis & Design | 2,779 | 12 |
+| 5 Implementation, Testing, Results | 4,138 | 19 |
+| 6 Conclusion | 1,502 | 5 |
+| 21 figures + 6 screenshots | — | 11 |
+| References | — | 3 |
+| Appendices A–I | 2,776 | 11 |
+| **Total** | | **≈ 90** |
 
-**Target.** 45–50 pages of text, landing at 60–65 with figures. So roughly
-**25 pages must still come out**, and Chapter Five is now where most of the
-excess is — it grew when the results were written in full. The cuts listed
-below remain the right ones; within Chapter Five specifically, §5.7 repeats
-material that §5.6 has already established, and the discussion of each research
-question can be reduced to its argument without restating the figures.
+**Still about 20 pages over.** The remaining levers, with what each is worth:
 
-**Check first:** whether the university counts front matter, references and
-appendices toward the limit. If it does not, moving tables to appendices is the
-single highest-leverage change and costs nothing.
+| Lever | Saves | Cost |
+|---|---|---|
+| Cut appendices to D (schema), E (tests), F (device interface), G (consent) | ~5 pp | A and B are the requirements spec; examiners often expect them |
+| Reduce figures from 21 to 12 — drop 4.8 class, 4.6 DFD level 2, 4.10/4.11 sequence, 5.1 recovery flowchart, 2.1, 2.2, 3.1, 1.1 | ~4 pp | These are the diagrams; the author has said keep them |
+| Cut Chapter 2 to the theoretical review and research gap only | ~5 pp | Weakens the literature review, which examiners read closely |
+| Cut Chapter 5 §5.7 discussion entirely, keeping only the results tables | ~4 pp | §5.7 answers the five research questions; Chapter 6 partly repeats it |
+| Move the data dictionary out of §4.6.4 into an appendix or drop it | ~3 pp | It was added at the author's request |
+
+**The honest position:** a six-chapter thesis with 21 figures and a full
+appendix set does not fit in 70 pages. Something in the table above has to go,
+and which one is a judgement about what the examiners weight. If the department
+will accept it, the cheapest defensible combination is the appendix cut plus
+dropping §5.7 into Chapter 6, which together get within a few pages of the
+limit without touching the figures or the literature review.
 
 ## What must NOT be cut
 
@@ -181,7 +195,7 @@ Useful when editing, so claims are not accidentally altered.
 
 ## Diagrams
 
-`diagrams-guide.md` describes all 21 figures and 12 screenshots — the type of
+`diagrams-guide.md` describes all 21 figures and the screenshots — the type of
 each, what it must contain, and what an examiner looks for.
 
 `diagram-prompts.md` gives a ready-to-paste prompt per figure, written so a
