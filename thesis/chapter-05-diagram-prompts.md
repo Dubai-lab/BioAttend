@@ -1,6 +1,6 @@
 # Chapter Five — diagram prompts
 
-Five figures. Screenshots 5.1–5.12 are captures from the running system and
+Five figures. Screenshots 5.1–5.6 are captures from the running system and
 need no prompt.
 
 Two of these are diagrams and three are charts, and they are different jobs.

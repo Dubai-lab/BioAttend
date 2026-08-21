@@ -54,35 +54,6 @@ Add an arrow showing that moving *t* right reduces FAR and increases FRR.
 policy decision, and why your sibling result happened. If you draw only one
 diagram well, draw this one.
 
-### Figure 2.2 — Conceptual framework
-**Type:** Box-and-arrow framework diagram.
-
-```
-        ┌─────────────────────────┐
-        │    HOSPITAL CONTEXT     │   (moderating)
-        │  hand condition,        │
-        │  lighting, shift        │
-        │  structure, roster size │
-        └───────────┬─────────────┘
-                    │ moderates
-                    ▼
-┌──────────────────────┐        ┌──────────────────────┐
-│  SYSTEM DESIGN       │───────▶│ ATTENDANCE RECORD    │
-│  • modality config   │        │ QUALITY              │
-│  • matching mode     │        │ • attribution        │
-│  • decision policy   │        │ • inclusiveness      │
-│  • shift validation  │        │ • shift validity     │
-│  • station auth      │        │ • integrity          │
-└──────────────────────┘        └──────────────────────┘
-   (independent)                     (dependent)
-```
-
-Annotate the main arrow with **TTF** and **TAM** as the theoretical lenses.
-
----
-
-## Chapter Three
-
 ### Figure 3.1 — Iterative development cycle
 **Type:** Circular flow, four nodes.
 
@@ -399,14 +370,14 @@ stopped. Both demonstrate claims you make in the text.
 | Chapter | Figures | Screenshots |
 |---|---|---|
 | 1 | 1 | — |
-| 2 | 2 | — |
+| 2 | 1 | — |
 | 3 | 1 | — |
 | 4 | 12 | — |
-| 5 | 5 | 12 |
-| **Total** | **21** | **12** |
+| 5 | 5 | 6 |
+| **Total** | **20** | **6** |
 
 At roughly a third of a page each for figures and a quarter for screenshots,
-expect **17–20 pages** of figures. With ~40 pages of text plus front matter,
+expect **14–16 pages** of figures. With ~40 pages of text plus front matter,
 references and appendices, that lands close to your 65-page target.
 
 **If you need to cut figures**, the ones carrying least weight are 4.8 (class

@@ -67,38 +67,6 @@ references reads as padding.
 
 ---
 
-## Figure 2.2 — Conceptual framework
-
-> Draw a conceptual framework diagram in the standard
-> independent–moderating–dependent layout.
->
-> **Top, centred:** rectangle "HOSPITAL CONTEXT (Moderating variables)"
-> containing: occupational hand condition; ambient lighting; shift structure
-> including shifts crossing midnight; enrolled population size; staff attitudes
-> toward biometric monitoring.
->
-> **Bottom left:** rectangle "SYSTEM DESIGN CHARACTERISTICS (Independent
-> variables)" containing: biometric modality configuration (unimodal vs. serial
-> multimodal); matching mode (identification vs. verification); decision policy
-> under ambiguity (nearest match vs. refusal); shift-context validation;
-> station authorisation.
->
-> **Bottom right:** rectangle "ATTENDANCE RECORD QUALITY (Dependent variables)"
-> containing: attribution accuracy; inclusiveness; shift validity; integrity;
-> throughput.
->
-> **Arrows:** a thick horizontal arrow from bottom-left to bottom-right box; a
-> vertical arrow from the top box pointing **down onto the middle of that
-> horizontal arrow**, not into either box, labelled "moderates".
->
-> Beneath, in italics: "Theoretical lenses: Task–Technology Fit (Goodhue &
-> Thompson, 1995); Technology Acceptance Model (Davis, 1989)".
->
-> Plain white background, thin black borders, minimal or no fill, left-aligned
-> text in boxes. Academic figure, not an infographic.
-
----
-
 ## Figure 3.1 — Iterative development cycle
 
 > Draw a circular process diagram with four stages arranged clockwise:
@@ -154,4 +122,4 @@ tables and must be reproduced exactly.
 | 5.4 | Histogram — facial similarity distributions, sibling series marked |
 | 5.5 | Line chart — FAR and FRR against threshold |
 
-Screenshots 5.1–5.12 are captures from the running system and need no prompt.
+Screenshots 5.1–5.6 are captures from the running system and need no prompt.
