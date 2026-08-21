@@ -16,8 +16,8 @@ survey** of user perception.
 
 Design science is appropriate where the contribution is the creation and
 evaluation of an artefact addressing an identified problem rather than the
-explanation of an existing phenomenon (Hevner, March, Park & Ram, [CITE: verify
-— MIS Quarterly, 2004]). Hevner et al. require that the research produce a
+explanation of an existing phenomenon (Hevner et al., 2004). Hevner et al.
+require that the research produce a
 purposeful artefact addressing a relevant problem, that it be rigorously
 evaluated, and that it contribute to the knowledge base. This study satisfies
 each: the artefact is a multimodal biometric attendance system; the problem is

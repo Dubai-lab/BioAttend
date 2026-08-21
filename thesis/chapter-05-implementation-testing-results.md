@@ -366,7 +366,9 @@ every artefact was rejected before any embedding was computed. **Twenty attempts
 support a weaker claim than the table suggests:** by the rule of three the upper
 bound is approximately 15%. The measurements show the stage functions against
 two common attack types; they do not establish a detection rate in the sense of
-ISO/IEC 30107.
+ISO/IEC 30107-3 (ISO, 2023), which requires a far larger and more varied attack
+set, including the three-dimensional artefacts catalogued by Ramachandra and
+Busch (2017).
 
 **The fingerprint device performs no liveness detection**, established from the
 recovered interface — no presentation attack function is exposed and no liveness
@@ -427,7 +429,8 @@ reliability.
 **RQ2 — combining the two modalities.** The serial architecture worked on both
 counts. 92.7% of check-ins completed on fingerprint alone at 2.9 seconds; a
 parallel architecture would have imposed the slower path on every transaction to
-improve an error rate already below the sample's confidence interval. On
+improve an error rate already below the sample's confidence interval — the
+throughput advantage Marcialis et al. (2024) establish for serial fusion. On
 coverage, one participant of twenty-two could not enrol at all and 6.7% of
 presentations failed to acquire, rising to 35.7% with a damp fingertip. Ross and
 Jain (2003) identify coverage of individuals one modality cannot serve as a
@@ -449,7 +452,8 @@ contained only visually dissimilar volunteers the failure would not have
 occurred, the safeguard would have stayed untested, and this thesis would have
 reported a clean result for a system carrying a latent defect. It was a
 **property of the matching mode, not a defect of the code**, as Jain et al.
-(2004) predict and the measured distributions confirm. And the **safeguard was
+(2004) predict for identification and Sami et al. (2022) document specifically
+for high-similarity face pairs, and as the measured distributions confirm. And the **safeguard was
 inactive because the test population was too small**, which is a lesson about
 testing as much as about design: a safeguard depending on the state of the data
 cannot be validated against data lacking that state. The response trades

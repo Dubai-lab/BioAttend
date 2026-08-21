@@ -111,12 +111,12 @@ reference: *"The full requirements specification is presented in Appendix B."*
 
 | Marker | Meaning |
 |---|---|
-| `[CITE: …]` | A real reference must be found. **27 in Chapter 2, 6 in Chapter 1.** |
 | `[DIAGRAM n.n]` | A figure to be drawn |
 | `[SCREENSHOT n.n]` | A capture from the running system |
 
-All `[TO COMPLETE]` markers have been resolved. The `[N] [T] [FAR] [FRR]`
-placeholders are gone.
+**All `[CITE: …]` markers are gone.** So are `[TO COMPLETE]` and the
+`[N] [T] [FAR] [FRR]` placeholders. Only figures and screenshots remain
+outstanding.
 
 ## Data provenance
 
@@ -160,16 +160,39 @@ enrol, 35.7% failure to acquire on damp fingers, no fingerprint liveness, P4
 only partially resolved) are reported rather than hidden. Real measurements
 will not look embarrassing beside them.
 
-## Citation policy
+## Citations
 
 **Do not invent references.** Fabricated citations are the most common failure
 mode when drafting a literature review with an assistant, and the fastest way
-to fail a viva.
+to fail a viva. Every reference in this thesis was searched for and checked
+against the actual publication before being written in.
 
-Ten verified references in APA 7th are listed at the end of
-`chapter-02-literature-review.md`. Everything else marked `[CITE: …]` must be
-sourced and verified by the author. Where a marker names an arXiv identifier or
-an exact title, that is a lead, not a completed citation.
+`references.md` holds the single APA 7th list — **27 entries**, alphabetical.
+The per-chapter lists that used to sit at the end of Chapters One and Two have
+been folded into it, so no reference is printed twice.
+
+Citation counts by chapter: Ch 1 → 18, Ch 2 → 39, Ch 3 → 2, Ch 4 → 4,
+Ch 5 → 5, Ch 6 → 4. Chapters Four to Six are light by design — they report this
+study's own design and results — but each cites the literature at the points
+where it makes a claim about prior work.
+
+Two references carry arguments the thesis rests on and should not be dropped in
+any edit:
+
+- **Sami et al. (2022)** benchmark identical twins as the hardest case in face
+  recognition. This is the published basis both for deliberately recruiting a
+  sibling pair (§3.4) and for treating the failure in §5.6.4 as a property of
+  the matching mode rather than a defect in the implementation.
+- **Marcialis et al. (2024)** establish the theoretical advantage of serial over
+  parallel fusion, which is the justification for the entire architecture
+  (§4.4.4).
+
+The one weak entry is the buddy-punching statistic in §1.1.1, attributed as
+*"Nucleus Research, as cited in Asure Software, 2023"*. The primary report is
+not publicly retrievable, so it is cited as a secondary source, which is the
+honest APA form. If a supervisor objects to an industry source, delete that
+sentence — Akinduyite et al. (2013) carries the same point with peer-reviewed
+data.
 
 ## Facts the writing depends on
 

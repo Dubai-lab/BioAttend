@@ -80,7 +80,8 @@ conclusions are drawn.
 
 **First, multimodality in an attendance system is best understood as a coverage
 measure rather than an accuracy measure.** The literature commonly justifies it
-by improved accuracy through fusion. In a hospital the more consequential
+by improved accuracy through fusion, though Ross and Jain (2003) list population
+coverage alongside accuracy among its benefits. In a hospital the more consequential
 benefit is population coverage — a route for staff whose primary biometric fails
 persistently rather than occasionally. Because hand condition in clinical work
 is an occupational characteristic and not a random event, single-modality
@@ -92,7 +93,8 @@ system was adopted to remove.
 reported accuracy.** The same models, unchanged, produced a misidentification in
 one-to-many operation and reliable verification in one-to-one operation. The
 determining factor was not model quality but the question the system asked of
-it. Applied systems should establish identity by the most reliable means
+it, consistent with the identification-error growth Jain et al. (2004)
+establish. Applied systems should establish identity by the most reliable means
 available and use weaker modalities to verify rather than to identify.
 
 **Third, a system's behaviour under uncertainty is a design decision, not a
@@ -154,14 +156,17 @@ the proportion of staff requiring the fallback — the figure that determines
 whether the multimodal design is justified in practice.
 
 **Template ageing.** Fingerprint quality among healthcare workers is expected to
-degrade with continued hygiene practice. A longitudinal study could establish
+degrade with continued hygiene practice, extending the demographic variation
+Galbally et al. (2024) measure cross-sectionally. A longitudinal study could establish
 the rate and inform a re-enrolment schedule, which no reviewed study provides.
 
 **Contactless identity assertion.** The fallback requires a staff number to be
 typed. An RFID badge would assert identity without contact while preserving the
 one-to-one verification model.
 
-**Fingerprint liveness detection.** The device provides none. Evaluating
+**Fingerprint liveness detection.** The device provides none, leaving it open to
+the artefact attacks Matsumoto et al. (2002) demonstrated against this sensor
+class. Evaluating
 software-based detection on the captured image, or the cost-benefit of sensors
 with integrated detection, would address a vulnerability this study documents
 but does not resolve.

@@ -34,8 +34,10 @@ documents exist independently and are compared only when a dispute arises.
 Analysed against the four criteria derived from the literature review, the
 process fails on each. **Identity** is not verified: the register authenticates
 a signature, and a colleague may sign for an absent staff member with no
-possibility of detection from the record itself. **Timing** is self-selected,
-with no independent source of time and no constraint on rounding. **Shift
+possibility of detection from the record itself — the impersonation failure
+Akinduyite et al. (2013) identify as characteristic of paper-based methods.
+**Timing** is self-selected, with no independent source of time and no
+constraint on rounding. **Shift
 validation** is impossible, because the register cannot distinguish a punctual
 arrival for a night shift from a very late arrival for a morning one — both
 appear simply as a time. **Auditability** is absent: entries can be altered or
@@ -116,7 +118,10 @@ fabricate attendance.**
 ### 4.4.4 Design decision: serial rather than parallel multimodality
 
 Fingerprint recognition is attempted first; facial recognition is invoked only
-when it does not produce a confident identification.
+when it does not produce a confident identification. This is the serial
+(cascaded) configuration whose advantages over parallel fusion Marcialis et al.
+(2024) establish theoretically, and whose population-coverage benefit Ross and
+Jain (2003) identify.
 
 The justification is throughput. Hospital shift changes concentrate arrivals
 into a short window, and requiring every staff member to present two biometrics
@@ -138,7 +143,9 @@ verification instead.
 
 This converts the question from *"who is this?"*, which facial recognition
 answers unreliably, to *"is this the person they claim to be?"*, which it
-answers well. The empirical basis for the decision is reported in Chapter Five.
+answers well — the identification-versus-verification asymmetry established by
+Jain et al. (2004), and acute for the high-similarity pairs Sami et al. (2022)
+characterise as the hardest cases in face recognition. The empirical basis for the decision is reported in Chapter Five.
 
 ### 4.4.6 Design decision: shift windows govern state
 
@@ -283,7 +290,8 @@ falsified by a client. Foreign keys to reference data restrict deletion, so a
 department in use cannot be removed; foreign keys to staff cascade, so removing
 a staff member removes their biometric data with them. **No table stores a raw
 biometric image** — only templates and embeddings, neither of which can be
-reversed into the original sample.
+reversed into the original sample, which limits the harm arising from any
+compromise of the database (Jain et al., 2008).
 
 ### 4.6.5 Access control design
 
