@@ -11,6 +11,10 @@ and Applications, 1*(5), 100–105. https://doi.org/10.12691/jcsa-1-5-4
 Asure Software. (2023). *How buddy punching is hurting your business*.
 https://www.asuresoftware.com/buddy-punching-hurting-business/
 
+Braun, V., & Clarke, V. (2006). Using thematic analysis in psychology.
+*Qualitative Research in Psychology, 3*(2), 77–101.
+https://doi.org/10.1191/1478088706qp063oa
+
 Burke, E. K., De Causmaecker, P., Vanden Berghe, G., & Van Landeghem, H. (2004).
 The state of the art of nurse rostering. *Journal of Scheduling, 7*(6), 441–499.
 https://doi.org/10.1023/B:JOSH.0000046076.75950.0b

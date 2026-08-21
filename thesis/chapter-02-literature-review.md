@@ -104,7 +104,7 @@ twins and look-alikes as **the hardest cases presented to facial recognition
 tools**, and demonstrating a correlation between an independent measure of
 facial similarity and the comparison scores returned by recognition systems.
 Their finding is the theoretical basis for the sampling decision described in
-Section 3.4 of this study and for the failure reported in Section 5.6.4.
+Section 3.6 of this study and for the failure reported in Section 5.6.4.
 
 ### 2.2.4 Multimodal biometrics
 

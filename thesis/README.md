@@ -73,7 +73,7 @@ a description of some software rather than a piece of research.
 | **§4.4.2–4.4.6** Four design justifications | Authority in the database; the bridge as a hardware necessity; serial over parallel multimodality; refusal under ambiguity. These are the arguments, not the description. |
 | **§2.5** Research gap | Without it the literature review has no purpose. |
 | **§2.3** Theoretical review | TAM, Task–Technology Fit, and biometric decision theory. Departments expect an explicit theoretical framing. |
-| **§3.5.1** Adversarial sampling justification | Explains why a sibling pair was deliberately included. Converts an awkward finding into methodological rigour. |
+| **§3.6** Adversarial sampling justification | Explains why a sibling pair was deliberately included. Converts an awkward finding into methodological rigour. |
 | **§1.2** Problem statement (four-part) | The fourth clause — refusing rather than guessing — is what makes the study distinctive and is traceable through every later chapter. |
 
 ## Where the length actually is
@@ -181,7 +181,7 @@ any edit:
 
 - **Sami et al. (2022)** benchmark identical twins as the hardest case in face
   recognition. This is the published basis both for deliberately recruiting a
-  sibling pair (§3.4) and for treating the failure in §5.6.4 as a property of
+  sibling pair (§3.6) and for treating the failure in §5.6.4 as a property of
   the matching mode rather than a defect in the implementation.
 - **Marcialis et al. (2024)** establish the theoretical advantage of serial over
   parallel fusion, which is the justification for the entire architecture

@@ -110,23 +110,14 @@ in the interface.
 
 ## 5.3 Technologies Used
 
-| Requirement | Technology | Justification |
-|---|---|---|
-| Client application | React 18.3, TypeScript 5.9 | Suits two interface densities; static typing prevents a class of error in code handling biometric identifiers |
-| Build tooling | Vite 5.4 | Code splitting isolates the machine learning runtime |
-| Database and authentication | Supabase (PostgreSQL) | Row-level security enforces access control in the database rather than the application (NFR5) |
-| Vector similarity | pgvector | Facial comparison runs server-side; the station never receives biometric data |
-| Face recognition | InsightFace `buffalo_l` (ArcFace, 512-d) | Highest accuracy available under a free licence |
-| Liveness and anti-spoofing | @vladmandic/human 3.3.6 | Runs in the browser, gating capture before any embedding is computed |
-| Local bridge | Python 3.13 (32-bit) | Required by the 32-bit vendor library; `ctypes` needs no compilation |
-
-Two provenance statements are made explicitly, because the distinction is often
-blurred. **The facial models are pretrained and were not trained in this study**
-— the system computes and compares embeddings; no weights were modified. **The
-device firmware performs fingerprint matching** — the template format is
-proprietary and the algorithm neither published nor inspectable, so the
-fingerprint accuracy below characterises the device, not an algorithm
-contributed by this work.
+The tools and technologies used, with the justification for each, are set out in
+Section 3.4. Two constraints from that section shaped the implementation
+reported here and are restated because the results depend on them: **the facial
+recognition models are pretrained and were not trained in this study**, and
+**fingerprint matching is performed by the device firmware** using a proprietary
+algorithm that could not be inspected. The fingerprint accuracy in Section 5.6
+therefore characterises the device rather than an algorithm written for this
+research.
 
 ## 5.4 User Interface
 
@@ -157,27 +148,11 @@ the next person does not see the previous person's name.
 
 ## 5.5 System Testing
 
-Testing was applied at four levels: **unit** (packet construction and parsing,
-window computation for shifts crossing midnight), **integration** (browser to
-bridge to device to database, with real hardware), **functional** (twenty-nine
-cases, Appendix E), and **security** (deliberate attempts to do what the system
-is designed to prevent).
-
-Positive cases verify that the system performs a required function. **Negative
-cases verify that it refuses what it should refuse** — capture before consent,
-attendance without a station credential, a supervisor reading biometric records,
-a scan outside every window, a photograph presented to the camera. A system that
-performs its functions but fails to refuse invalid operations would satisfy the
-first group entirely while being unfit for use.
-
-**Accuracy protocol.** Each participant presented their own biometric ten times
-across two sessions on different days, per modality, and each participant's
-sample was compared against five other enrolled identities to generate impostor
-comparisons, which do not arise in ordinary use. The sibling pair contributed
-ten further comparisons. Fingerprint presentations were repeated with the
-fingertip dampened and dried; facial presentations at approximately 80 lux. A
-printed photograph and a photograph on a phone screen were presented ten times
-each, against forty live presentations as control.
+Testing followed the four-level strategy set out in Section 3.8 — unit,
+integration, functional and security — and the accuracy trial protocol described
+in Section 3.7. Twenty-nine functional cases were executed against real hardware
+rather than simulated responses; the full matrix with results appears in
+Appendix E. Results are reported below.
 
 ## 5.6 Test Results
 
