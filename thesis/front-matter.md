@@ -162,12 +162,16 @@ management, false acceptance, one-to-one verification.
 | Abbreviation | Meaning |
 |---|---|
 | API | Application Programming Interface |
+| CDN | Content Delivery Network |
+| CPU | Central Processing Unit |
 | CSV | Comma-Separated Values |
 | DET | Detection Error Trade-off |
+| DFD | Data Flow Diagram |
 | DSR | Design Science Research |
 | EER | Equal Error Rate |
 | ERD | Entity Relationship Diagram |
 | FAR | False Acceptance Rate |
+| FR | Functional Requirement |
 | FRR | False Rejection Rate |
 | FTA | Failure to Acquire |
 | FTE | Failure to Enrol |
@@ -175,13 +179,16 @@ management, false acceptance, one-to-one verification.
 | HTTP / HTTPS | Hypertext Transfer Protocol (Secure) |
 | ISO/IEC | International Organization for Standardization / International Electrotechnical Commission |
 | NFIQ | NIST Fingerprint Image Quality |
+| NFR | Non-Functional Requirement |
 | NIST | National Institute of Standards and Technology |
+| RFID | Radio-Frequency Identification |
 | RLS | Row Level Security |
 | RPC | Remote Procedure Call |
 | SDK | Software Development Kit |
 | SQL | Structured Query Language |
 | TAM | Technology Acceptance Model |
 | TTF | Task–Technology Fit |
+| UC | Use Case |
 | UI | User Interface |
 | USB | Universal Serial Bus |
 | UML | Unified Modeling Language |
@@ -189,19 +196,63 @@ management, false acceptance, one-to-one verification.
 
 ---
 
+## LIST OF FIGURES
+
+*Twenty-six figures. Numbers are final; captions below are the wording to use.
+Screenshots are numbered as figures, because that is what they are — a separate
+"Screenshot 5.1" alongside "Figure 5.1" would collide.*
+
+| Figure | Caption |
+|---|---|
+| 1.1 | Conceptual overview of the proposed system |
+| 2.1 | Genuine and impostor score distributions with threshold *t* |
+| 3.1 | Iterative development cycle |
+| 4.1 | Activity diagram of the existing manual attendance process |
+| 4.2 | System architecture |
+| 4.3 | Use case diagram |
+| 4.4 | Context diagram (data flow diagram, level 0) |
+| 4.5 | Data flow diagram, level 1 |
+| 4.6 | Data flow diagram, level 2: decomposition of Capture attendance |
+| 4.7 | Entity-relationship diagram |
+| 4.8 | Class diagram of the application service layer |
+| 4.9 | Activity diagram for attendance recording |
+| 4.10 | Sequence diagram: check in by fingerprint |
+| 4.11 | Sequence diagram: facial fallback path |
+| 4.12 | Interface wireframes: console and check-in station |
+| 5.1 | Device interface recovery process |
+| 5.2 | Deployment topology |
+| 5.3 | Fingerprint genuine and impostor score distributions |
+| 5.4 | Facial genuine and impostor similarity distributions |
+| 5.5 | False acceptance and false rejection rates against threshold |
+| 5.6 | Administrative console, overview page |
+| 5.7 | Staff enrolment, fingerprint capture step |
+| 5.8 | Staff enrolment, facial capture step |
+| 5.9 | Live attendance view |
+| 5.10 | Check-in station, successful check-in |
+| 5.11 | Check-in station, scan refused outside the shift window |
+
+## LIST OF TABLES
+
+*Number these in Word as you place them; the list below is what exists.*
+
+| Chapter | Tables |
+|---|---|
+| 2 | Conceptual framework variables |
+| 3 | Increment activities; trial design; data collection instruments; tools and technologies |
+| 4 | Problems with the existing system; actors; data flow processes and stores |
+| 5 | Development increments; functional test failures; fingerprint accuracy; facial accuracy; misidentification scores; confirmatory trial; adverse conditions; presentation attacks; access control; performance and usability; comparison against the eight problems |
+| 6 | — |
+| Appendices | Functional requirements; non-functional requirements; database schema; access control matrix; functional test cases; recovered device interface |
+
 ## OTHER FRONT MATTER TO ASSEMBLE
 
-These are generated once the document is compiled in Word or LaTeX, and are
-listed here so none is forgotten:
+Generated once the document is compiled in Word or LaTeX:
 
 - **Title page** — university format, usually prescribed
 - **Table of Contents** — generate from headings; do not type by hand
-- **List of Figures** — the diagrams marked throughout Chapters 1–5
-- **List of Tables** — the requirement, test case and results tables
-- **List of Appendices** — questionnaire, observation form, consent form,
-  database schema, selected source code
+- **List of Appendices** — A to I
 
-> **Tip:** if you are writing in Word, apply the built-in Heading 1 / Heading 2
-> styles to the chapter and section headings. The Table of Contents, List of
-> Figures and List of Tables then generate and renumber automatically. Typing
-> them manually guarantees they will be wrong by the time you submit.
+> **Tip:** apply Word's built-in Heading 1 / Heading 2 styles to the chapter and
+> section headings. The Table of Contents, List of Figures and List of Tables
+> then generate and renumber automatically. Typing them by hand guarantees they
+> will be wrong by the time you submit.

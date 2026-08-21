@@ -122,4 +122,4 @@ tables and must be reproduced exactly.
 | 5.4 | Histogram — facial similarity distributions, sibling series marked |
 | 5.5 | Line chart — FAR and FRR against threshold |
 
-Screenshots 5.1–5.6 are captures from the running system and need no prompt.
+Figures 5.6 to 5.11 are screenshots of the running system and need no prompt.

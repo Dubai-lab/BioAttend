@@ -367,17 +367,17 @@ stopped. Both demonstrate claims you make in the text.
 
 ## Summary
 
-| Chapter | Figures | Screenshots |
-|---|---|---|
-| 1 | 1 | — |
-| 2 | 1 | — |
-| 3 | 1 | — |
-| 4 | 12 | — |
-| 5 | 5 | 6 |
-| **Total** | **20** | **6** |
+| Chapter | Figures |
+|---|---|
+| 1 | 1 |
+| 2 | 1 |
+| 3 | 1 |
+| 4 | 12 |
+| 5 | 11 |
+| **Total** | **26** |
 
 At roughly a third of a page each for figures and a quarter for screenshots,
-expect **14–16 pages** of figures. With ~40 pages of text plus front matter,
+expect **10–13 pages** of figures. With ~40 pages of text plus front matter,
 references and appendices, that lands close to your 65-page target.
 
 **If you need to cut figures**, the ones carrying least weight are 4.8 (class

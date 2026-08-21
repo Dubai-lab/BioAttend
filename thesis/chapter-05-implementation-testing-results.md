@@ -130,19 +130,19 @@ the next person does not see the previous person's name.
 
 ---
 
-> **[SCREENSHOT 5.1]** — Console overview, summary tiles and today's activity.
+> **[DIAGRAM 5.6 — screenshot]** — Console overview, summary tiles and today's activity.
 >
-> **[SCREENSHOT 5.2]** — Enrolment, fingerprint step: finger targets, capture
+> **[DIAGRAM 5.7 — screenshot]** — Enrolment, fingerprint step: finger targets, capture
 > progress, and the consent panel with capture disabled.
 >
-> **[SCREENSHOT 5.3]** — Enrolment, face step: camera preview with the live
+> **[DIAGRAM 5.8 — screenshot]** — Enrolment, face step: camera preview with the live
 > anti-spoofing verdict and the five head positions.
 >
-> **[SCREENSHOT 5.4]** — Live attendance, showing method, match score, status.
+> **[DIAGRAM 5.9 — screenshot]** — Live attendance, showing method, match score, status.
 >
-> **[SCREENSHOT 5.5]** — Station success state: name, staff number, shift, time.
+> **[DIAGRAM 5.10 — screenshot]** — Station success state: name, staff number, shift, time.
 >
-> **[SCREENSHOT 5.6]** — Station refusing a scan outside the window.
+> **[DIAGRAM 5.11 — screenshot]** — Station refusing a scan outside the window.
 
 ---
 

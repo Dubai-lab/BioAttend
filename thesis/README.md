@@ -38,7 +38,7 @@ twelve to six.
 | 4 System Analysis & Design | 2,779 | 12 |
 | 5 Implementation, Testing, Results | 4,138 | 19 |
 | 6 Conclusion | 1,502 | 5 |
-| 20 figures + 6 screenshots | — | 11 |
+| 26 figures (20 drawn, 6 screenshots) | — | 11 |
 | References | — | 3 |
 | Appendices A–I | 2,776 | 11 |
 | **Total** | | **≈ 90** |
@@ -48,7 +48,7 @@ twelve to six.
 | Lever | Saves | Cost |
 |---|---|---|
 | Cut appendices to D (schema), E (tests), F (device interface), G (consent) | ~5 pp | A and B are the requirements spec; examiners often expect them |
-| Reduce figures from 20 to 12 — drop 4.8 class, 4.6 DFD level 2, 4.10/4.11 sequence, 5.1 recovery flowchart, 2.1, 2.2, 3.1, 1.1 | ~4 pp | These are the diagrams; the author has said keep them |
+| Reduce figures from 26 to 16 — drop 4.8 class, 4.6 DFD level 2, 4.10/4.11 sequence, 5.1 recovery flowchart, 2.1, 2.2, 3.1, 1.1 | ~4 pp | These are the diagrams; the author has said keep them |
 | Cut Chapter 2 to the theoretical review and research gap only | ~5 pp | Weakens the literature review, which examiners read closely |
 | Cut Chapter 5 §5.7 discussion entirely, keeping only the results tables | ~4 pp | §5.7 answers the five research questions; Chapter 6 partly repeats it |
 | Move the data dictionary out of §4.6.4 into an appendix or drop it | ~3 pp | It was added at the author's request |
@@ -111,8 +111,7 @@ reference: *"The full requirements specification is presented in Appendix B."*
 
 | Marker | Meaning |
 |---|---|
-| `[DIAGRAM n.n]` | A figure to be drawn |
-| `[SCREENSHOT n.n]` | A capture from the running system |
+| `[DIAGRAM n.n]` | A figure to place. Figures 5.6–5.11 are screenshots; the rest are drawn. |
 
 **All `[CITE: …]` markers are gone.** So are `[TO COMPLETE]` and the
 `[N] [T] [FAR] [FRR]` placeholders. Only figures and screenshots remain
@@ -218,7 +217,7 @@ Useful when editing, so claims are not accidentally altered.
 
 ## Diagrams
 
-`diagrams-guide.md` describes all 20 figures and the screenshots — the type of
+`diagrams-guide.md` describes all 26 figures — the type of
 each, what it must contain, and what an examiner looks for.
 
 `diagram-prompts.md` gives a ready-to-paste prompt per figure, written so a

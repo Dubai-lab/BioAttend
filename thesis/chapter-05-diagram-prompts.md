@@ -1,7 +1,7 @@
 # Chapter Five — diagram prompts
 
-Five figures. Screenshots 5.1–5.6 are captures from the running system and
-need no prompt.
+Five figures needing a drawing tool. Figures 5.6 to 5.11 are screenshots of
+the running system and need no prompt.
 
 Two of these are diagrams and three are charts, and they are different jobs.
 Figures 5.1 and 5.2 describe a process and a topology — any drawing tool will
