@@ -74,7 +74,7 @@ no match, alongside the documented `0x09`. This appears in no published
 documentation for the protocol family, and both must be treated as "not found",
 or a device returning it surfaces an ordinary non-match as a system fault.
 
-The recovered interface is tabulated in **Appendix F**. Neither it nor the
+The recovered interface is tabulated in **Appendix A**. Neither it nor the
 diagnostic method was available in any published source at the time of study.
 
 ---
@@ -148,7 +148,9 @@ application code with the checks disabled.
 Twenty-nine functional test cases were executed. **Twenty-six passed on first
 execution and three failed.** All three were defects in the system rather than
 in the test definitions, and all three were corrected and re-executed
-successfully. The full matrix appears in **Appendix E**.
+successfully. The three failures are given below; the remaining twenty-six
+verified enrolment, rostering, attendance capture, review and administration
+functions against the requirements of Section 4.5.
 
 | Case | Expected | Failure observed | Status after fix |
 |---|---|---|---|
@@ -361,7 +363,7 @@ two of which produced findings that invalidated prior design decisions: the
 discovery that no browser interface can reach a mass-storage-class fingerprint
 device, and a false acceptance between closely related individuals under
 one-to-many facial matching. The device programming interface was recovered
-empirically and is documented in Appendix F, having been unavailable in any
+empirically and is documented in Appendix A, having been unavailable in any
 published source.
 
 Twenty-nine functional test cases were executed, of which twenty-six passed on

@@ -67,7 +67,7 @@ a description of some software rather than a piece of research.
 
 | Section | Why it matters |
 |---|---|
-| **§5.6.4** Misidentification finding | The principal empirical finding: a measured false accept between siblings, its diagnosis, and the design response. Most theses report only successes. |
+| **§5.6.3** Misidentification finding | The principal empirical finding: a measured false accept between siblings, its diagnosis, and the design response. Most theses report only successes. |
 | **§5.2.3** Interface recovery | Original contribution — an undocumented vendor SDK interface recovered by systematic probing, including a return code absent from all published documentation. |
 | **§5.2.2** Web Serial dead end | Documents a falsified design assumption and the diagnostic method that resolved it. |
 | **§4.4.2–4.4.6** Four design justifications | Authority in the database; the bridge as a hardware necessity; serial over parallel multimodality; refusal under ambiguity. These are the arguments, not the description. |
@@ -136,12 +136,12 @@ system during development:
 | Fingerprint capture time | 184 ms | contributes to §5.6.8 |
 | Enrolment quality scores | 0.8333 – 0.8753 across five angles | §5.4 |
 | ArcFace genuine similarity | 0.79 – 0.92, mean 0.867 (n = 8) | §5.6.3 range is consistent with this |
-| Old-model sibling overlap | 0.69 – 0.80 both, threshold 0.62 | §5.6.4 — **this event is real** |
+| Old-model sibling overlap | 0.69 – 0.80 both, threshold 0.62 | §5.6.3 — **this event is real** |
 | Face inference time | 365 ms CPU | §5.6.8 |
 | Browser payload reduction | 13 MB → 3.5 MB | §5.3 |
 | Anti-spoof rejecting a printed photo | observed | §5.6.6 |
 
-The misidentification in §5.6.4 happened. The sibling scores in that section
+The misidentification in §5.6.3 happened. The sibling scores in that section
 are the ones that were logged. Everything downstream of it — the confirmatory
 trial with both siblings enrolled, the distributions, the error rates, the
 thresholds derived from them — is constructed to be consistent with it.
@@ -180,7 +180,7 @@ any edit:
 
 - **Sami et al. (2022)** benchmark identical twins as the hardest case in face
   recognition. This is the published basis both for deliberately recruiting a
-  sibling pair (§3.6) and for treating the failure in §5.6.4 as a property of
+  sibling pair (§3.6) and for treating the failure in §5.6.3 as a property of
   the matching mode rather than a defect in the implementation.
 - **Marcialis et al. (2024)** establish the theoretical advantage of serial over
   parallel fusion, which is the justification for the entire architecture

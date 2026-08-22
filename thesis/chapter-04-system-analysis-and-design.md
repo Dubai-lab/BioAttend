@@ -167,8 +167,7 @@ at 07:00 on the 8th.
 
 ## 4.5 System Requirements
 
-**Twenty-nine functional requirements** are specified in full in **Appendix A**,
-in five groups. *Enrolment* (FR1–FR9) registers staff, records biometric consent
+**Twenty-nine functional requirements** were specified, in five groups. *Enrolment* (FR1–FR9) registers staff, records biometric consent
 before permitting any capture, stores up to four fingerprint templates and five
 facial embeddings per person, and rejects captures below a quality threshold.
 *Rostering* (FR10–FR11) assigns at most one shift per person per date.
@@ -181,8 +180,8 @@ who signed off without altering captured times, and export. *Administration*
 (FR25–FR29) covers console users, station registration, thresholds, append-only
 audit logging excluding biometric payloads, and reader synchronisation.
 
-**Twelve non-functional requirements** are in **Appendix B**. Four govern the
-design directly: **NFR3** — false acceptance is prioritised over false rejection
+**Twelve non-functional requirements** were specified. Four govern the design
+directly: **NFR3** — false acceptance is prioritised over false rejection
 when selecting thresholds, because the errors are not equally damaging; **NFR5**
 — biometric records are accessible only to administrators, enforced by row-level
 security rather than application logic; **NFR6** — attendance is not recordable
@@ -252,8 +251,8 @@ not self-evident from the level above.
 ### 4.6.3 Database design
 
 Fifteen tables span reference data, people, biometrics, devices and operations.
-The full schema with design notes is in **Appendix C**, and the data dictionary
-follows in Section 4.6.4. Three decisions shape it.
+The data dictionary in Section 4.6.4 documents every table and field. Three
+decisions shape the schema.
 
 **Attendance is one row per staff member per shift date**, with check-in and
 check-out as columns and a uniqueness constraint on that pair, so "already
@@ -296,7 +295,7 @@ compromise of the database (Jain et al., 2008).
 ### 4.6.5 Access control design
 
 Access is enforced by row-level security policies evaluated by the database on
-every query rather than by the application. The full matrix is in **Appendix D**.
+every query rather than by the application.
 
 Two aspects merit emphasis. **Supervisors have no access to biometric records at
 all** — they require attendance data, which does not require access to templates

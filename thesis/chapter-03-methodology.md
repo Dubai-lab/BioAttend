@@ -74,7 +74,7 @@ through the same five activities, with the outcome of each informing the next:
 Two increments produced findings that falsified a prior design decision and
 forced a return to design rather than progression to the next increment. These
 are the feedback paths shown in Figure 3.1, and they are reported in full in
-Sections 5.2.1 and 5.6.4. The eight increments and their outcomes are tabulated
+Sections 5.2.1 and 5.6.3. The eight increments and their outcomes are tabulated
 in Section 5.2.
 
 ---
@@ -165,7 +165,7 @@ system was tested against the condition most likely to defeat it.
 The sample comprised **22 participants**, each to be enrolled with both
 modalities, including **one sibling pair**. Whether every participant could in
 fact be enrolled on both is a result rather than a premise, and is reported in
-Section 5.6.2.
+Section 5.6.1.
 
 Sample size was set by the requirements of the measurements rather than by a
 statistical power calculation. Two considerations govern it. First, **error
@@ -224,11 +224,18 @@ live presentations as a control.
 
 **Observation** recorded what the log does not: enrolment duration, presentation
 attempts before success, and points at which participants hesitated or needed
-instruction. Notes were taken on a structured form (Appendix H).
+instruction. Notes were taken on a structured observation form recording
+enrolment duration, fingers attempted, captures rejected for quality or
+liveness, attempts to success per trial, and a checklist of difficulties
+observed.
 
 **A questionnaire** measured perceived usefulness and perceived ease of use
 following the Technology Acceptance Model (Davis, 1989), on a five-point Likert
-scale (Appendix I).
+scale. Five items measured perceived usefulness (speed, accuracy, resistance
+to attendance recorded in one's name, usefulness at work, and the value of
+checking one's own record) and five measured perceived ease of use (ease of
+learning, clarity of each step, effort required on each modality, and clarity of
+the outcome shown), followed by three open questions.
 
 | Instrument | Data collected | Purpose |
 |---|---|---|
@@ -257,7 +264,8 @@ the device's behaviour was itself the subject of investigation.
 
 **Functional testing** executed each requirement specified in Chapter Four as
 one or more test cases with defined preconditions, inputs and expected outputs.
-Twenty-nine cases were defined; the full matrix appears in Appendix E.
+Twenty-nine cases were defined, one or more per requirement; results are
+reported in Section 5.5.
 
 **Security testing** consisted of deliberate attempts to perform actions the
 system is designed to prevent: recording attendance without a station
@@ -337,7 +345,10 @@ destroyed; and that participation was voluntary and could be withdrawn at any
 time without consequence. **Consent is enforced by the system itself** rather
 than by procedure alone: the enrolment interface prevents biometric capture
 until three distinct consent conditions have been recorded. The blank form
-issued to participants is reproduced in Appendix G.
+issued to participants stated what would be captured, that templates rather
+than images would be stored, who could access them, the retention period, and
+the right to withdraw, and required a separate initial against each of the three
+consent statements.
 
 **Data minimisation.** The system stores biometric templates and embeddings
 only. No fingerprint image is retained after the template is extracted and no

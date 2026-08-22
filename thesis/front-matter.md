@@ -242,7 +242,7 @@ Screenshots are numbered as figures, because that is what they are — a separat
 | 4 | Problems with the existing system; actors; data flow processes and stores |
 | 5 | Development increments; functional test failures; fingerprint accuracy; facial accuracy; misidentification scores; confirmatory trial; adverse conditions; presentation attacks; access control; performance and usability; comparison against the eight problems |
 | 6 | — |
-| Appendices | Functional requirements; non-functional requirements; database schema; access control matrix; functional test cases; recovered device interface |
+| Appendices | Recovered device programming interface |
 
 ## OTHER FRONT MATTER TO ASSEMBLE
 
@@ -250,7 +250,7 @@ Generated once the document is compiled in Word or LaTeX:
 
 - **Title page** — university format, usually prescribed
 - **Table of Contents** — generate from headings; do not type by hand
-- **List of Appendices** — A to I
+- **List of Appendices** — A (recovered device interface) and B (attendance recording function)
 
 > **Tip:** apply Word's built-in Heading 1 / Heading 2 styles to the chapter and
 > section headings. The Table of Contents, List of Figures and List of Tables
