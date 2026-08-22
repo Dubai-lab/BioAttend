@@ -102,54 +102,43 @@ throughout this project.
 
 Accurate staff attendance records underpin payroll, shift handover and staffing
 decisions in hospitals, yet most facilities still rely on manual paper registers
-that authenticate a signature rather than a person. This weakness permits proxy
+that authenticate a signature rather than a person. This permits proxy
 attendance, produces self-reported times that cannot be verified, and yields
-records that carry no reference to the shift a staff member was scheduled to
-work. The problem is consequential in settings of acute health workforce
-shortage, where Rwanda records approximately 10.5 physicians, nurses and
-midwives per 10,000 population against a World Health Organization threshold of
-44.5.
+records carrying no reference to the shift a staff member was scheduled to work
+— a problem of consequence where health workers are already scarce, Rwanda
+recording approximately 10.5 physicians, nurses and midwives per 10,000
+population against a World Health Organization threshold of 44.5. This study
+designed, implemented and evaluated a multimodal biometric attendance and shift
+management system combining fingerprint and facial recognition, following a
+design science methodology with iterative development and experimental
+evaluation. The system was built as a web application integrated with a
+commercial optical fingerprint module and a standard camera, using a managed
+relational database in which access control and attendance authority are
+enforced by the database rather than the client. The architecture employs serial
+rather than parallel multimodality: fingerprint recognition is primary and
+facial recognition is invoked only on failure, protecting throughput at shift
+change while providing a route for staff whose fingerprints do not read reliably
+— a population characteristic of clinical work owing to hand hygiene practice.
 
-This study designed, implemented and evaluated a multimodal biometric attendance
-and shift management system combining fingerprint and facial recognition. A
-design science methodology was adopted, with iterative development and
-experimental evaluation. The system was implemented as a web application
-integrated with a commercial optical fingerprint module and a standard camera,
-using a managed relational database in which access control and attendance
-authority are enforced by the database rather than the client application.
-
-The architecture employs serial rather than parallel multimodality: fingerprint
-recognition is primary, and facial recognition is invoked only when the
-fingerprint path fails — protecting throughput at shift change while providing a
-route for staff whose fingerprints do not read reliably, a population
-characteristic of clinical work owing to hand hygiene practice.
-
-Evaluation with 22 participants across 645 recognition comparisons yielded no
-observed false acceptance in either modality at the selected operating
-thresholds — an upper bound of approximately 1.4% at 95% confidence — with
-false rejection of 4.1% for fingerprint and 2.3% for face. Both thresholds were
-determined from the measured score distributions rather than adopted from
-vendor defaults, and the facial threshold was set deliberately above the equal
-error rate because the two error types carry asymmetric costs. One participant
-could not be enrolled on fingerprint at all and used the facial path
-exclusively.
-
-A significant finding emerged during evaluation: one-to-many facial
-identification matched an unenrolled individual to a closely related enrolled
-participant, with genuine and impostor similarity distributions overlapping
-completely such that no threshold separated them. A margin-based safeguard
-intended to prevent this was found inactive because only one identity was
-enrolled. The system was consequently redesigned to require both a similarity
-threshold and a margin over the runner-up before naming anyone, and to fall
-back to one-to-one verification against an asserted identity whenever either
-condition fails.
-
-The study concludes that multimodality in attendance systems is best understood
-as a population coverage measure rather than an accuracy measure; that the
-operating mode of a biometric subsystem matters more than its reported accuracy;
-and that a system's behaviour under uncertainty is a design decision, since
-returning the nearest match when a comparison is ambiguous silently attributes a
-record to the wrong person.
+Evaluation with 22 participants over 645 recognition comparisons observed no
+false acceptance in either modality at thresholds derived from the measured
+score distributions rather than from vendor defaults, with false rejection of
+4.1% for fingerprint and 2.3% for face; one participant could not be enrolled on
+fingerprint at all and used the facial path exclusively. A significant finding
+emerged during evaluation: one-to-many facial identification matched an
+unenrolled individual to a closely related enrolled participant, with genuine
+and impostor similarity distributions overlapping completely such that no
+threshold separated them, while a margin-based safeguard intended to prevent
+this was found inactive because only one identity was enrolled. The system was
+consequently redesigned to require both a similarity threshold and a margin over
+the runner-up before naming anyone, and to fall back to one-to-one verification
+against an asserted identity whenever either condition fails. The study
+concludes that multimodality in attendance systems is best understood as a
+population coverage measure rather than an accuracy measure; that the operating
+mode of a biometric subsystem matters more than its reported accuracy; and that
+a system's behaviour under uncertainty is a design decision, since returning the
+nearest match when a comparison is ambiguous silently attributes a record to the
+wrong person.
 
 **Keywords:** biometric attendance, multimodal biometrics, fingerprint
 recognition, facial recognition, hospital workforce management, shift
