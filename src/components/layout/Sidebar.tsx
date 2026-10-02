@@ -149,7 +149,15 @@ export function Sidebar({
           )}
           {serviceOnline === false && (
             <p className="mt-0.5 pl-4 text-[11px] leading-snug text-slate-500">
-              Start <span className="id-text">run-bridge.bat</span>
+              {/* A phone has no reader of its own, so "start the bridge" would
+                  send someone looking for a fault that is not there. */}
+              {/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? (
+                'The reader is on the PC — use face here'
+              ) : (
+                <>
+                  Start <span className="id-text">run-bridge.bat</span>
+                </>
+              )}
             </p>
           )}
         </div>

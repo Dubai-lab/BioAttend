@@ -22,29 +22,115 @@ const LOCAL_SERVICE_URL = 'http://127.0.0.1:8322'
 const STORAGE_KEY = 'bioattend.face.serviceUrl'
 
 /**
- * Where this browser reaches the face service.
+ * Where bridge/face_tunnel.py publishes the tunnel's current address.
  *
- * On the PC that runs the service the answer is the loopback address. A phone
- * has no service of its own — 127.0.0.1 there is the phone — so it is pointed
- * at a public tunnel to the PC instead (bridge/run-face-tunnel.bat).
- *
- * Stored per browser rather than built in: a free tunnel gets a new address
- * every time it starts, and a build-time value would need a redeploy each time.
+ * A free tunnel is given a new address every time it starts, so the address
+ * cannot be built into the site. The launcher writes it to this public file
+ * instead, and every device reads it from there — nothing to type on a phone.
  */
-export function getFaceServiceUrl(): string {
+const PUBLISHED_URL =
+  `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/bioattend-runtime/face-service.json`
+
+/** The address chosen automatically for this page load, once known. */
+let resolved: string | null = null
+let resolving: Promise<string> | null = null
+
+function manualUrl(): string | null {
   try {
-    return localStorage.getItem(STORAGE_KEY) || LOCAL_SERVICE_URL
+    return localStorage.getItem(STORAGE_KEY)
   } catch {
-    return LOCAL_SERVICE_URL
+    return null
   }
+}
+
+/**
+ * A phone has no face service of its own — 127.0.0.1 there is the phone. It
+ * is not probed, both because it cannot answer and because asking an https
+ * page to reach the local network raises a permission prompt on Android.
+ */
+function isPhone(): boolean {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+}
+
+async function answers(base: string, timeoutMs: number): Promise<boolean> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(`${base}/health`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+      signal: controller.signal,
+    })
+    return response.ok
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function publishedUrl(): Promise<string | null> {
+  try {
+    // The query string defeats the CDN: a cached copy is a dead tunnel.
+    const response = await fetch(`${PUBLISHED_URL}?t=${Date.now()}`, { cache: 'no-store' })
+    if (!response.ok) return null
+    const body = (await response.json()) as { url?: string | null }
+    if (!body.url) return null
+    const url = new URL(body.url)
+    return url.protocol === 'https:' ? url.origin : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Decide which face service this browser should use.
+ *
+ *   1. An address entered by hand under Devices always wins.
+ *   2. On a computer, the service on this machine if it is answering.
+ *   3. Otherwise the tunnel address the PC has published.
+ *
+ * The answer is remembered for the page load and forgotten when a call fails,
+ * so a restarted tunnel is picked up without a refresh.
+ */
+async function resolveBase(): Promise<string> {
+  const manual = manualUrl()
+  if (manual) return manual
+  if (resolved) return resolved
+
+  resolving ??= (async () => {
+    try {
+      if (!isPhone() && (await answers(LOCAL_SERVICE_URL, 1500))) {
+        resolved = LOCAL_SERVICE_URL
+      } else {
+        resolved = await publishedUrl()
+      }
+      return resolved ?? LOCAL_SERVICE_URL
+    } finally {
+      resolving = null
+    }
+  })()
+
+  return resolving
+}
+
+/** The address in use right now. Local until resolution has run. */
+export function getFaceServiceUrl(): string {
+  return manualUrl() ?? resolved ?? LOCAL_SERVICE_URL
 }
 
 export function isRemoteFaceService(): boolean {
   return getFaceServiceUrl() !== LOCAL_SERVICE_URL
 }
 
+/** True when the address was typed in under Devices rather than found. */
+export function isManualFaceService(): boolean {
+  return manualUrl() !== null
+}
+
 /**
- * Point this browser at a tunnel, or back at the local service with ''.
+ * Point this browser at a specific tunnel, or back to automatic with ''.
  *
  * Returns the address stored, or null if it was not usable. Only https is
  * accepted: the site is served over https and a browser will refuse to send
@@ -52,6 +138,8 @@ export function isRemoteFaceService(): boolean {
  */
 export function setFaceServiceUrl(input: string): string | null {
   const trimmed = input.trim()
+  resolved = null
+
   if (trimmed === '') {
     localStorage.removeItem(STORAGE_KEY)
     return LOCAL_SERVICE_URL
@@ -70,11 +158,10 @@ export function setFaceServiceUrl(input: string): string | null {
 export class FaceServiceOfflineError extends Error {
   constructor() {
     super(
-      isRemoteFaceService()
-        ? 'The face recognition service cannot be reached through the tunnel. ' +
-            'Check that run-face-service.bat and run-face-tunnel.bat are both ' +
-            'running on the PC, and that the address under Devices is the ' +
-            'one the tunnel window shows now.'
+      isPhone() || isManualFaceService()
+        ? 'The face recognition service cannot be reached. On the PC, check ' +
+            'that run-face-service.bat and run-face-tunnel.bat are both ' +
+            'running, then try again.'
         : 'The face recognition service is not running. Start ' +
             'bridge/run-face-service.bat and leave the window open.',
     )
@@ -117,7 +204,8 @@ async function call<T>(path: string, body?: unknown, timeoutMs = 15000): Promise
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const response = await fetch(`${getFaceServiceUrl()}${path}`, {
+    const base = await resolveBase()
+    const response = await fetch(`${base}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body ?? {}),
@@ -125,6 +213,9 @@ async function call<T>(path: string, body?: unknown, timeoutMs = 15000): Promise
     })
     return (await response.json()) as T
   } catch {
+    // Forget the automatic choice: the tunnel may have restarted on a new
+    // address, and the next call should look it up again.
+    resolved = null
     throw new FaceServiceOfflineError()
   } finally {
     clearTimeout(timer)
