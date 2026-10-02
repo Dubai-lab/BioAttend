@@ -8,6 +8,7 @@
  * library that cannot run in a browser.
  *
  *   Browser ──HTTP──▶ 127.0.0.1:8322 ──▶ SCRFD + ArcFace ──▶ 512-d embedding
+ *   Phone ──HTTPS──▶ Cloudflare tunnel ──▶ the same service on the PC
  *
  * The camera stays in the browser. Only the captured frame crosses to the
  * service, and only an embedding comes back. No image is stored at either end.
@@ -17,13 +18,65 @@
  * Frames are gated on liveness before being sent.
  */
 
-const SERVICE_URL = 'http://127.0.0.1:8322'
+const LOCAL_SERVICE_URL = 'http://127.0.0.1:8322'
+const STORAGE_KEY = 'bioattend.face.serviceUrl'
+
+/**
+ * Where this browser reaches the face service.
+ *
+ * On the PC that runs the service the answer is the loopback address. A phone
+ * has no service of its own — 127.0.0.1 there is the phone — so it is pointed
+ * at a public tunnel to the PC instead (bridge/run-face-tunnel.bat).
+ *
+ * Stored per browser rather than built in: a free tunnel gets a new address
+ * every time it starts, and a build-time value would need a redeploy each time.
+ */
+export function getFaceServiceUrl(): string {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || LOCAL_SERVICE_URL
+  } catch {
+    return LOCAL_SERVICE_URL
+  }
+}
+
+export function isRemoteFaceService(): boolean {
+  return getFaceServiceUrl() !== LOCAL_SERVICE_URL
+}
+
+/**
+ * Point this browser at a tunnel, or back at the local service with ''.
+ *
+ * Returns the address stored, or null if it was not usable. Only https is
+ * accepted: the site is served over https and a browser will refuse to send
+ * a camera frame from it to a plain http address anyway.
+ */
+export function setFaceServiceUrl(input: string): string | null {
+  const trimmed = input.trim()
+  if (trimmed === '') {
+    localStorage.removeItem(STORAGE_KEY)
+    return LOCAL_SERVICE_URL
+  }
+
+  try {
+    const url = new URL(trimmed.includes('://') ? trimmed : `https://${trimmed}`)
+    if (url.protocol !== 'https:') return null
+    localStorage.setItem(STORAGE_KEY, url.origin)
+    return url.origin
+  } catch {
+    return null
+  }
+}
 
 export class FaceServiceOfflineError extends Error {
   constructor() {
     super(
-      'The face recognition service is not running. Start ' +
-        'bridge/run-face-service.bat and leave the window open.',
+      isRemoteFaceService()
+        ? 'The face recognition service cannot be reached through the tunnel. ' +
+            'Check that run-face-service.bat and run-face-tunnel.bat are both ' +
+            'running on the PC, and that the address under Devices is the ' +
+            'one the tunnel window shows now.'
+        : 'The face recognition service is not running. Start ' +
+            'bridge/run-face-service.bat and leave the window open.',
     )
     this.name = 'FaceServiceOfflineError'
   }
@@ -64,7 +117,7 @@ async function call<T>(path: string, body?: unknown, timeoutMs = 15000): Promise
   const timer = setTimeout(() => controller.abort(), timeoutMs)
 
   try {
-    const response = await fetch(`${SERVICE_URL}${path}`, {
+    const response = await fetch(`${getFaceServiceUrl()}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body ?? {}),

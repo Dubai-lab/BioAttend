@@ -17,6 +17,7 @@ import {
   type EnrollStage,
 } from '@/lib/fingerprint/bridge'
 import { ReaderSync } from '@/components/devices/ReaderSync'
+import { FaceServiceAddress } from '@/components/devices/FaceServiceAddress'
 import { cn } from '@/lib/utils'
 
 type Status = 'idle' | 'busy' | 'error'
@@ -229,6 +230,8 @@ export function Devices() {
           )}
 
           <ReaderSync deviceConnected={device !== null} />
+
+          <FaceServiceAddress />
         </div>
 
         <aside className="space-y-4">
