@@ -105,17 +105,20 @@
      scrolled hides its own controls: a person standing at it has no reason to
      expect content below the fold, and will not look for it. */
   .kiosk-root {
-    @apply h-screen w-full overflow-hidden flex flex-col items-center
+    @apply h-dvh w-full overflow-hidden flex flex-col items-center
            justify-center bg-shell-950 text-white select-none;
   }
 
+  /* The kiosk scale is sized for a mounted display read from two metres. On a
+     phone the same sizes overflow the screen, so both scale with the viewport
+     width and stop at the full kiosk size. */
   .kiosk-headline {
-    font-size: var(--text-kiosk-lg);
+    font-size: clamp(2rem, 9vw, var(--text-kiosk-lg));
     @apply font-semibold tracking-tight text-center leading-none;
   }
 
   .kiosk-subhead {
-    font-size: var(--text-kiosk-sm);
+    font-size: clamp(1rem, 4.2vw, var(--text-kiosk-sm));
     @apply text-center text-slate-300;
   }
 }

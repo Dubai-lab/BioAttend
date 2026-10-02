@@ -117,7 +117,7 @@ export function Settings() {
 
   if (loading || !settings) {
     return (
-      <div className="flex items-center gap-2 px-8 py-12 text-sm text-muted">
+      <div className="flex items-center gap-2 px-4 py-12 sm:px-8 text-sm text-muted">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         Loading settings…
       </div>
@@ -125,7 +125,7 @@ export function Settings() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Settings</h1>

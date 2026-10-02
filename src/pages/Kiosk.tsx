@@ -424,13 +424,13 @@ export function Kiosk() {
   }
 
   return (
-    <div className="kiosk-root px-6">
-      <div className="absolute right-8 top-6 text-right">
-        <p className="id-text text-3xl font-semibold text-white">{format(now, 'HH:mm')}</p>
-        <p className="text-sm text-slate-400">{format(now, 'EEEE d MMMM yyyy')}</p>
+    <div className="kiosk-root px-4 sm:px-6">
+      <div className="absolute right-4 top-4 text-right sm:right-8 sm:top-6">
+        <p className="id-text text-xl font-semibold text-white sm:text-3xl">{format(now, 'HH:mm')}</p>
+        <p className="text-xs text-slate-400 sm:text-sm">{format(now, 'EEEE d MMMM yyyy')}</p>
       </div>
 
-      <div className="absolute left-8 top-6">
+      <div className="absolute left-4 top-4 sm:left-8 sm:top-6">
         <Logo tone="light" size="sm" />
       </div>
 
@@ -450,7 +450,7 @@ export function Kiosk() {
       >
         <div
           className={cn(
-            'relative size-72 overflow-hidden rounded-full border-4 transition-colors',
+            'relative size-60 overflow-hidden sm:size-72 rounded-full border-4 transition-colors',
             screen.state === 'face' && screen.progress?.detected
               ? 'border-success-500'
               : 'border-slate-600',
@@ -513,7 +513,7 @@ export function Kiosk() {
             intent.current = 'lookup'
             setScreen({ state: 'scanning' })
           }}
-          className="absolute bottom-16 rounded-card border border-slate-700 px-6 py-3 text-base text-slate-300 transition-colors hover:bg-shell-900"
+          className="absolute bottom-14 rounded-card border border-slate-700 px-5 py-2.5 text-sm sm:bottom-16 sm:px-6 sm:py-3 sm:text-base text-slate-300 transition-colors hover:bg-shell-900"
         >
           View my attendance record
         </button>
@@ -546,8 +546,8 @@ function ScreenBody({
     if (!fingerprintAvailable) {
       return (
         <div className="flex flex-col items-center gap-8">
-          <div className="flex size-40 items-center justify-center rounded-full border-4 border-slate-700">
-            <ScanFace className="size-20 text-info-500" aria-hidden="true" />
+          <div className="flex size-28 sm:size-40 items-center justify-center rounded-full border-4 border-slate-700">
+            <ScanFace className="size-14 sm:size-20 text-info-500" aria-hidden="true" />
           </div>
           <p className="kiosk-headline text-white">Look at the camera</p>
           <p className="kiosk-subhead">
@@ -561,13 +561,13 @@ function ScreenBody({
       <div className="flex flex-col items-center gap-8">
         <div
           className={cn(
-            'flex size-40 items-center justify-center rounded-full border-4',
+            'flex size-28 sm:size-40 items-center justify-center rounded-full border-4',
             screen.state === 'scanning'
               ? 'animate-pulse border-brand-400 bg-brand-500/10'
               : 'border-slate-700',
           )}
         >
-          <Fingerprint className="size-20 text-brand-400" aria-hidden="true" />
+          <Fingerprint className="size-14 sm:size-20 text-brand-400" aria-hidden="true" />
         </div>
         <p className="kiosk-headline text-white">Place your finger</p>
         <p className="kiosk-subhead">Hold it flat on the reader until it beeps</p>
@@ -580,8 +580,8 @@ function ScreenBody({
   if (screen.state === 'face') {
     return (
       <div className="flex flex-col items-center gap-8">
-        <div className="flex size-40 animate-pulse items-center justify-center rounded-full border-4 border-info-500 bg-info-500/10">
-          <ScanFace className="size-20 text-info-500" aria-hidden="true" />
+        <div className="flex size-28 sm:size-40 animate-pulse items-center justify-center rounded-full border-4 border-info-500 bg-info-500/10">
+          <ScanFace className="size-14 sm:size-20 text-info-500" aria-hidden="true" />
         </div>
         <p className="kiosk-headline text-white">{screen.message}</p>
         <p className="kiosk-subhead">Fingerprint did not read — checking your face</p>
@@ -784,8 +784,8 @@ function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-shell-950 px-6">
-      <div className="w-full max-w-md rounded-card bg-shell-900 p-8">
+    <div className="flex min-h-dvh items-center justify-center bg-shell-950 px-4 sm:px-6">
+      <div className="w-full max-w-md rounded-card bg-shell-900 p-5 sm:p-8">
         <h1 className="text-lg font-semibold text-white">Set up this station</h1>
         <p className="mt-1 text-sm text-slate-400">
           Entered once per kiosk PC. These identify the station itself — staff never

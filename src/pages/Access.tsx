@@ -54,7 +54,7 @@ export function Access() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-8 py-12 text-sm text-muted">
+      <div className="flex items-center gap-2 px-4 py-12 sm:px-8 text-sm text-muted">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         Loading…
       </div>
@@ -62,7 +62,7 @@ export function Access() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Access</h1>
         <p className="mt-1 text-sm text-muted">Console users and check-in stations</p>

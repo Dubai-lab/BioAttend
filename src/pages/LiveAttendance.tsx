@@ -63,7 +63,7 @@ export function LiveAttendance() {
   const flagged = rows.filter((r) => r.requires_approval).length
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Live Attendance</h1>
@@ -114,7 +114,7 @@ export function LiveAttendance() {
         </div>
       </header>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile label="On duty now" value={onDuty} icon={LogIn} tone="brand" />
         <Tile label="Checked out" value={completed} icon={LogOut} tone="neutral" />
         <Tile label="Records today" value={rows.length} icon={Users} tone="neutral" />
@@ -132,15 +132,82 @@ export function LiveAttendance() {
       )}
 
       <div className="overflow-x-auto rounded-card border border-slate-200 bg-white">
-        <table className="w-full min-w-[820px] text-sm">
+        {/*
+          Phones get a list rather than the table. Six columns do not fit in
+          390px, and squeezing them leaves the name — the one thing a
+          supervisor is scanning for — with no room at all.
+        */}
+        {rows.length > 0 && (
+          <ul className="divide-y divide-slate-100 md:hidden">
+            {rows.map((row) => (
+              <li
+                key={row.id}
+                className={cn('px-4 py-3', row.requires_approval && 'bg-warn-50/40')}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-medium text-brand-800">
+                    {initials(row.staff?.full_name ?? '?')}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-900">
+                      {row.staff?.full_name ?? 'Unknown'}
+                    </p>
+                    <p className="truncate text-xs text-muted">
+                      <span className="id-text">{row.staff?.staff_no}</span>
+                      {' · '}
+                      {departmentName.get(row.department_id) ?? '—'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 pl-11 text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs text-muted">In</span>
+                    <span className="id-text text-slate-900">{timeOnly(row.check_in_at)}</span>
+                    <StatusPill status={row.check_in_status} />
+                  </span>
+                  {row.check_out_at ? (
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-muted">Out</span>
+                      <span className="id-text text-slate-900">
+                        {timeOnly(row.check_out_at)}
+                      </span>
+                      <StatusPill status={row.check_out_status} />
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">
+                      On duty
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1.5 pl-11 text-xs capitalize text-muted">
+                  {row.check_in_method ?? '—'}
+                  {row.check_in_confidence !== null && (
+                    <span className="id-text normal-case"> · score {row.check_in_confidence}</span>
+                  )}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <table
+          className={cn(
+            'w-full text-sm md:min-w-[820px]',
+            // The loading and empty states live in the table, so it stays
+            // visible on phones until there are rows for the list above.
+            rows.length > 0 && 'hidden md:table',
+          )}
+        >
           <thead>
             <tr className="border-b border-slate-200 text-left">
               <Th>Staff</Th>
-              <Th>Department</Th>
+              <Th className="hidden md:table-cell">Department</Th>
               <Th>Check in</Th>
               <Th>Check out</Th>
-              <Th>Method</Th>
-              <Th>Score</Th>
+              <Th className="hidden md:table-cell">Method</Th>
+              <Th className="hidden md:table-cell">Score</Th>
             </tr>
           </thead>
           <tbody>
@@ -177,7 +244,7 @@ export function LiveAttendance() {
                   row.requires_approval && 'bg-warn-50/40',
                 )}
               >
-                <td className="px-4 py-3">
+                <td className="w-full max-w-0 px-4 py-3 md:w-auto md:max-w-none">
                   <div className="flex items-center gap-3">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-medium text-brand-800">
                       {initials(row.staff?.full_name ?? '?')}
@@ -191,7 +258,7 @@ export function LiveAttendance() {
                   </div>
                 </td>
 
-                <td className="px-4 py-3 text-slate-700">
+                <td className="hidden px-4 py-3 text-slate-700 md:table-cell">
                   {departmentName.get(row.department_id) ?? '—'}
                 </td>
 
@@ -217,11 +284,11 @@ export function LiveAttendance() {
                   )}
                 </td>
 
-                <td className="px-4 py-3 capitalize text-slate-700">
+                <td className="hidden px-4 py-3 capitalize text-slate-700 md:table-cell">
                   {row.check_in_method ?? '—'}
                 </td>
 
-                <td className="id-text px-4 py-3 text-slate-700">
+                <td className="hidden id-text px-4 py-3 text-slate-700 md:table-cell">
                   {row.check_in_confidence ?? '—'}
                 </td>
               </tr>
@@ -268,9 +335,14 @@ function Tile({
   )
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+    <th
+      className={cn(
+        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-500',
+        className,
+      )}
+    >
       {children}
     </th>
   )

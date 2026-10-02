@@ -37,7 +37,7 @@ export function StaffNumberEntry({
   }
 
   return (
-    <div className="flex h-full max-h-screen flex-col items-center justify-center gap-[2vh] py-[2vh]">
+    <div className="flex h-full max-h-dvh flex-col items-center justify-center gap-[2vh] py-[2vh]">
       <div className="text-center">
         <p
           className="font-semibold leading-tight text-white"

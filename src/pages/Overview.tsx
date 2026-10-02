@@ -89,7 +89,7 @@ export function Overview() {
   const scope = isAdmin ? 'Hospital-wide' : (departmentName.get(profile?.department_id ?? '') ?? 'Your department')
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">
           Good {partOfDay()}, {profile?.full_name?.split(' ')[0]}
@@ -100,7 +100,7 @@ export function Overview() {
       </header>
 
       {/* Today */}
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile
           label="On duty now"
           value={onDuty.length}
@@ -131,7 +131,7 @@ export function Overview() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Recent activity */}
         <section className="rounded-card border border-slate-200 bg-white">
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">

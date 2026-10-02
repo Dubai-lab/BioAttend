@@ -80,24 +80,24 @@ export function MyRecord({
             {data.records.map((row) => (
               <li
                 key={row.shift_date}
-                className="flex items-center gap-4 px-4 py-3 text-sm"
+                className="flex items-center gap-2 px-3 py-3 text-sm sm:gap-4 sm:px-4"
               >
                 <span className="id-text w-24 shrink-0 text-slate-300">
                   {format(new Date(row.shift_date), 'EEE d MMM')}
                 </span>
 
-                <span className="w-28 shrink-0 text-slate-400">
+                <span className="hidden w-28 shrink-0 text-slate-400 sm:block">
                   {row.shift_name ?? 'No shift'}
                 </span>
 
-                <span className="id-text w-16 shrink-0 text-white">
+                <span className="id-text w-12 shrink-0 text-white sm:w-16">
                   {row.check_in_at ? format(new Date(row.check_in_at), 'HH:mm') : '—'}
                 </span>
-                <span className="id-text w-16 shrink-0 text-white">
+                <span className="id-text w-12 shrink-0 text-white sm:w-16">
                   {row.check_out_at ? format(new Date(row.check_out_at), 'HH:mm') : '—'}
                 </span>
 
-                <span className="flex-1">
+                <span className="min-w-0 flex-1">
                   <StatusChip
                     status={row.check_in_status}
                     pending={row.requires_approval}

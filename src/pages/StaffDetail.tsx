@@ -198,7 +198,7 @@ export function StaffDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-8 py-12 text-sm text-muted">
+      <div className="flex items-center gap-2 px-4 py-12 sm:px-8 text-sm text-muted">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
         Loading staff record…
       </div>
@@ -207,7 +207,7 @@ export function StaffDetail() {
 
   if (!staff) {
     return (
-      <div className="px-8 py-12 text-center">
+      <div className="px-4 py-12 sm:px-8 text-center">
         <p className="font-medium text-slate-900">Staff member not found</p>
         <Link to="/staff" className="mt-2 inline-block text-sm text-brand-700 hover:underline">
           Back to the directory
@@ -221,7 +221,7 @@ export function StaffDetail() {
   const consentMissing = !staff.consent_given
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <Link
         to="/staff"
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-slate-900"

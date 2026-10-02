@@ -56,7 +56,7 @@ export function AuditLog() {
   const actorById = useMemo(() => new Map(actors.map((a) => [a.id, a])), [actors])
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Audit Log</h1>
         <p className="mt-1 text-sm text-muted">Who changed what in the console</p>

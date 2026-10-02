@@ -190,8 +190,8 @@ export function Enrollment() {
 
   if (savedStaffNo) {
     return (
-      <div className="px-8 py-6">
-        <div className="mx-auto max-w-md rounded-card border border-slate-200 bg-white p-8 text-center">
+      <div className="px-4 py-5 sm:px-8 sm:py-6">
+        <div className="mx-auto max-w-md rounded-card border border-slate-200 bg-white p-5 text-center sm:p-8">
           <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-success-50 text-success-700">
             <Check className="size-6" aria-hidden="true" />
           </div>
@@ -218,7 +218,7 @@ export function Enrollment() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       {/* Stepper */}
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -257,9 +257,9 @@ export function Enrollment() {
         </ol>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Main panel */}
-        <section className="rounded-card border border-slate-200 bg-white p-6">
+        <section className="rounded-card border border-slate-200 bg-white p-4 sm:p-6">
           {refLoading ? (
             <div className="flex items-center gap-2 py-12 text-sm text-muted">
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -390,7 +390,7 @@ export function Enrollment() {
         </section>
 
         {/* Context rail */}
-        <aside className="space-y-4">
+        <aside className="order-first space-y-4 lg:order-none">
           <section className="rounded-card border border-slate-200 bg-white p-5">
             <h2 className="mb-3 text-sm font-medium text-slate-900">Enrolling</h2>
             <div className="flex items-center gap-3">

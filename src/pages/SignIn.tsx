@@ -44,7 +44,7 @@ export function SignIn() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh">
       {/* Brand panel */}
       <div className="hidden flex-1 flex-col justify-between bg-shell-900 p-12 lg:flex">
         <div className="flex items-center gap-3">

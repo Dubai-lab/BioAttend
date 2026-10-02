@@ -65,7 +65,7 @@ export function Exceptions() {
   const departmentName = new Map(departments.map((d) => [d.id, d.name]))
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Exceptions</h1>
         <p className="mt-1 text-sm text-muted">

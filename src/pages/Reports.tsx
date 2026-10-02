@@ -181,7 +181,7 @@ export function Reports() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Reports</h1>
@@ -218,7 +218,7 @@ export function Reports() {
         </div>
       ) : (
         <>
-          <div className="mb-5 grid gap-3 sm:grid-cols-4">
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Tile label="Attendance records" value={records.length} icon={Users} />
             <Tile label="Scan attempts" value={stats.totalAttempts} icon={BarChart3} />
             <Tile label="Late arrivals" value={stats.late} icon={AlertCircle} tone="warn" />

@@ -104,7 +104,7 @@ export function Devices() {
   }
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6">
         <h1 className="text-xl font-semibold text-slate-900">Devices</h1>
         <p className="mt-1 text-sm text-muted">Readers and kiosks</p>
@@ -135,10 +135,10 @@ export function Devices() {
         </Callout>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <section className="rounded-card border border-slate-200 bg-white p-5">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
               <div>
                 <h2 className="font-medium text-slate-900">Fingerprint reader</h2>
                 <p className="mt-1 text-sm text-muted">

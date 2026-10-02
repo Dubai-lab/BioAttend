@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LogOut } from 'lucide-react'
+import { LogOut, X } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { useAuth } from '@/lib/auth-context'
 import { navGroupsForRole } from '@/lib/navigation'
@@ -13,10 +13,15 @@ interface SidebarProps {
   faceOnline?: boolean
   readersReachable?: string
   lastSyncAt?: string
+  /** Below the `lg` breakpoint the sidebar is a drawer; this opens it. */
+  open?: boolean
+  onClose?: () => void
 }
 
 export function Sidebar({
   badges = {},
+  open = false,
+  onClose,
   // Deliberately no default: `undefined` is the "still checking" state, and a
   // default of false would report a working service as offline for the first
   // second of every page load.
@@ -29,10 +34,40 @@ export function Sidebar({
   const groups = navGroupsForRole(profile?.role)
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col bg-shell-900 text-slate-300">
+    <>
+      {/* Backdrop behind the open drawer. Tapping it is the obvious way out. */}
+      <div
+        className={cn(
+          'fixed inset-0 z-40 bg-shell-950/60 transition-opacity lg:hidden',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/*
+        A permanent column from `lg` up. Below that it would take two thirds
+        of a phone screen, so it slides in over the page instead and is taken
+        out of the tab order while closed.
+      */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 flex w-64 max-w-[85vw] shrink-0 flex-col bg-shell-900 text-slate-300',
+          'transition-transform duration-200 lg:static lg:z-auto lg:max-w-none lg:translate-x-0',
+          open ? 'translate-x-0' : 'invisible -translate-x-full lg:visible',
+        )}
+      >
       {/* Brand */}
-      <div className="px-4 py-5">
+      <div className="flex items-center justify-between px-4 py-5">
         <Logo tone="light" size="sm" />
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-control p-1.5 text-slate-400 hover:bg-shell-800 hover:text-white lg:hidden"
+          aria-label="Close menu"
+        >
+          <X className="size-5" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -50,6 +85,7 @@ export function Sidebar({
                     <NavLink
                       to={item.to}
                       end={item.to === '/'}
+                      onClick={onClose}
                       className={({ isActive }) =>
                         cn(
                           'flex items-center gap-3 rounded-control px-3 py-2 text-sm transition-colors',
@@ -166,6 +202,7 @@ export function Sidebar({
           <LogOut className="size-4" aria-hidden="true" />
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

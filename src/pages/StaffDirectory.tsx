@@ -71,7 +71,7 @@ export function StaffDirectory() {
   const fullyEnrolled = staff.filter((p) => p.fingerprints_enrolled >= 2).length
 
   return (
-    <div className="px-8 py-6">
+    <div className="px-4 py-5 sm:px-8 sm:py-6">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Staff Directory</h1>
@@ -141,14 +141,14 @@ export function StaffDirectory() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-card border border-slate-200 bg-white">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full text-sm md:min-w-[720px]">
           <thead>
             <tr className="border-b border-slate-200 text-left">
               <Th>Staff</Th>
-              <Th>Department</Th>
-              <Th>Role</Th>
+              <Th className="hidden md:table-cell">Department</Th>
+              <Th className="hidden md:table-cell">Role</Th>
               <Th>Biometrics</Th>
-              <Th>Status</Th>
+              <Th className="hidden sm:table-cell">Status</Th>
             </tr>
           </thead>
           <tbody>
@@ -181,7 +181,7 @@ export function StaffDirectory() {
 
             {visible.map((person) => (
               <tr key={person.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="px-4 py-3">
+                <td className="w-full max-w-0 px-4 py-3 md:w-auto md:max-w-none">
                   <Link to={`/staff/${person.id}`} className="flex items-center gap-3">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-medium text-brand-800">
                       {initials(person.full_name)}
@@ -191,13 +191,18 @@ export function StaffDirectory() {
                         {person.full_name}
                       </p>
                       <p className="id-text text-xs text-muted">{person.staff_no}</p>
+                      {/* Department and role have their own columns from md up. */}
+                      <p className="truncate text-xs text-muted md:hidden">
+                        {departmentName.get(person.department_id) ?? '—'} ·{' '}
+                        {titleName.get(person.job_title_id) ?? '—'}
+                      </p>
                     </div>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="hidden px-4 py-3 text-slate-700 md:table-cell">
                   {departmentName.get(person.department_id) ?? '—'}
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="hidden px-4 py-3 text-slate-700 md:table-cell">
                   {titleName.get(person.job_title_id) ?? '—'}
                 </td>
                 <td className="px-4 py-3">
@@ -206,7 +211,7 @@ export function StaffDirectory() {
                     face={person.face_enrolled}
                   />
                 </td>
-                <td className="px-4 py-3">
+                <td className="hidden px-4 py-3 sm:table-cell">
                   <StatusPill status={person.status} />
                 </td>
               </tr>
@@ -270,9 +275,14 @@ function StatusPill({ status }: { status: Staff['status'] }) {
   )
 }
 
-function Th({ children }: { children: React.ReactNode }) {
+function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <th className="px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-500">
+    <th
+      className={cn(
+        'px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-slate-500',
+        className,
+      )}
+    >
       {children}
     </th>
   )
