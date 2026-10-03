@@ -13,6 +13,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { bridge, BridgeOfflineError } from '@/lib/fingerprint/bridge'
 import { staffForSlot } from '@/lib/fingerprint/sync'
+import { FaceServiceOfflineError } from '@/lib/face/service'
 import { Logo } from '@/components/brand/Logo'
 import {
   describeFaceFailure,
@@ -41,6 +42,40 @@ const RESULT_DISPLAY_MS = 5000
  * Tune it from the confidence values logged on every attendance row.
  */
 const MIN_MATCH_SCORE = 1
+
+/** What to show when the database refuses the station itself. */
+const STATION_REJECTED =
+  'This station’s code or token is not valid any more. Tap Change station and enter the current ones.'
+
+/**
+ * What a failed face attempt should tell the person.
+ *
+ * Every failure used to read "Not recognised", which sent people back to the
+ * camera again and again over problems no amount of looking could fix — an
+ * unreachable recognition service, or a station whose token had been
+ * replaced. Only a genuine non-match is "not recognised".
+ */
+function faceFailure(err: unknown): Screen {
+  if (err instanceof FaceServiceOfflineError) {
+    return {
+      state: 'error',
+      message:
+        'Face recognition cannot be reached. On the PC, check that run-face-service.bat ' +
+        'and run-face-tunnel.bat are both running.',
+    }
+  }
+  const message = err instanceof Error ? err.message : String(err)
+  return { state: 'error', message: `Face check failed: ${message}` }
+}
+
+/** The camera starts with the page; give it a moment before giving up on it. */
+async function waitForCamera(stream: { current: MediaStream | null }, ms = 5000) {
+  const until = Date.now() + ms
+  while (!stream.current && Date.now() < until) {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+  return stream.current !== null
+}
 
 interface KioskCredentials {
   code: string
@@ -99,7 +134,7 @@ export function Kiosk() {
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: 'user' },
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
           audio: false,
         })
         if (cancelled) {
@@ -194,6 +229,7 @@ export function Kiosk() {
    */
   const tryFaceIdentify = useCallback(
     async (creds: KioskCredentials) => {
+      await waitForCamera(streamRef)
       const video = videoRef.current
       if (!video || !streamRef.current) {
         awaitingInput.current = true
@@ -205,7 +241,7 @@ export function Kiosk() {
 
       try {
         const scan = await scanForFace(video, {
-          timeoutMs: 7000,
+          timeoutMs: 9000,
           onProgress: (progress) =>
             setScreen({ state: 'face', message: progress.message, progress }),
         })
@@ -239,11 +275,11 @@ export function Kiosk() {
           return
         }
 
-        setScreen({ state: 'unknown' })
+        // needsStaffNumber is false only when the station itself was refused.
+        setScreen({ state: 'unknown', detail: STATION_REJECTED })
       } catch (err) {
         console.warn('[kiosk] face identify failed:', err)
-        awaitingInput.current = true
-        setScreen({ state: 'enter_number' })
+        setScreen(faceFailure(err))
       }
     },
     [record],
@@ -279,7 +315,9 @@ export function Kiosk() {
           setScreen({
             state: 'unknown',
             detail:
-              scan.reason === 'spoof' ? 'A photo or screen cannot be used' : undefined,
+              scan.reason === 'spoof'
+                ? 'A photo or screen cannot be used'
+                : 'No clear face was seen. Face the camera in good light and try again.',
           })
           return
         }
@@ -293,7 +331,11 @@ export function Kiosk() {
         console.info('[kiosk] face verify', result)
 
         if (!result.ok || !result.staff_id) {
-          setScreen({ state: 'unknown', detail: describeFaceFailure(result) })
+          setScreen({
+            state: 'unknown',
+            detail:
+              result.reason === 'invalid_kiosk' ? STATION_REJECTED : describeFaceFailure(result),
+          })
           return
         }
 
@@ -305,7 +347,7 @@ export function Kiosk() {
         )
       } catch (err) {
         console.warn('[kiosk] face verification failed:', err)
-        setScreen({ state: 'unknown' })
+        setScreen(faceFailure(err))
       } finally {
         setStaffNumber('')
         awaitingInput.current = false
@@ -359,7 +401,7 @@ export function Kiosk() {
       // one failing does not stop the other.
       if (err instanceof BridgeOfflineError) {
         setFingerprintAvailable(false)
-        if (streamRef.current) {
+        if (await waitForCamera(streamRef)) {
           console.info('[kiosk] fingerprint service unavailable — face only')
           await tryFaceIdentify(creds)
           return
@@ -387,7 +429,7 @@ export function Kiosk() {
       // Raw device codes mean nothing to the person at the sensor. Log the
       // detail for whoever maintains the system; show them an instruction.
       console.warn('[kiosk] scan failed:', message)
-      setScreen({ state: 'unknown' })
+      setScreen({ state: 'unknown', detail: 'The reader could not read that press — try again' })
     }
   }, [])
 

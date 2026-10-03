@@ -40,13 +40,17 @@ export interface FaceScanSuccess {
 /**
  * Watch the camera until a live face appears, then embed it.
  *
- * Two stages, deliberately separated:
+ * Three stages:
  *
  *   1. Liveness, in the browser. Cheap, runs on every frame, and rejects
  *      photographs before anything is sent anywhere.
- *   2. Embedding, from the local InsightFace service. Called once, on the
- *      frame that passed — recognition is the expensive step and there is no
- *      reason to run it on frames that will be discarded.
+ *   2. Quality, judged on what the recognition service measured. A face that
+ *      is small, turned away or weakly detected gives an embedding that sits
+ *      far from the enrolled ones, and matching it is how a genuine person ends
+ *      up "not recognised". Such frames are retried, not sent for matching.
+ *   3. Averaging. Two good frames are embedded and averaged. One frame carries
+ *      its own blink, blur and lighting; the mean of two is steadier, which is
+ *      what lets the same person score the same way twice.
  *
  * Several consecutive live frames are required before embedding. A single
  * frame can catch a photo mid-wave; consecutive frames cannot.
@@ -59,6 +63,22 @@ export interface FaceScanProgress {
   /** Consecutive good frames so far, against requiredFrames. */
   streak: number
   required: number
+}
+
+/** Below these the embedding is unreliable; the frame is retried instead. */
+const MIN_DETECTION_SCORE = 0.6
+/** Face area as a share of the frame. ~0.03 is a face about 110px wide at 640px. */
+const MIN_FACE_COVERAGE = 0.03
+const MAX_YAW = 25
+const MAX_PITCH = 25
+
+/** Good frames averaged into one probe. */
+const SAMPLES = 2
+
+function averaged(embeddings: number[][]): number[] {
+  const mean = embeddings[0].map((_, i) => embeddings.reduce((sum, e) => sum + e[i], 0))
+  const norm = Math.hypot(...mean) || 1
+  return mean.map((value) => value / norm)
 }
 
 export async function scanForFace(
@@ -79,6 +99,13 @@ export async function scanForFace(
   let streak = 0
   let bestReal = 0
   let lastReason: LivenessRejection = 'no_face'
+  // Remembered separately because streak resets on every rejection, which
+  // would otherwise report a photo held up for eight seconds as a timeout.
+  let spoofSeen = false
+  const samples: number[][] = []
+
+  const report = (detected: boolean, message: string) =>
+    onProgress?.({ detected, message, streak, required: requiredFrames })
 
   while (Date.now() < deadline) {
     if (video.readyState >= 2) {
@@ -87,13 +114,7 @@ export async function scanForFace(
       if (liveness.ok) {
         streak += 1
         bestReal = Math.max(bestReal, liveness.reading.real)
-
-        onProgress?.({
-          detected: true,
-          message: 'Hold still',
-          streak,
-          required: requiredFrames,
-        })
+        report(true, 'Hold still')
 
         if (streak >= requiredFrames) {
           const embedded = await faceService.embedFrame(video)
@@ -104,25 +125,41 @@ export async function scanForFace(
             lastReason = embedded.reason === 'multiple_faces' ? 'multiple_faces' : 'no_face'
             continue
           }
-          return { ok: true, embedding: embedded.embedding, real: bestReal }
+
+          const problem =
+            embedded.coverage < MIN_FACE_COVERAGE
+              ? 'Move closer'
+              : Math.abs(embedded.yaw) > MAX_YAW || Math.abs(embedded.pitch) > MAX_PITCH
+                ? 'Look straight at the camera'
+                : embedded.score < MIN_DETECTION_SCORE
+                  ? 'Face the light and hold still'
+                  : null
+
+          if (problem) {
+            report(true, problem)
+            continue
+          }
+
+          samples.push(embedded.embedding)
+          if (samples.length >= SAMPLES) {
+            return { ok: true, embedding: averaged(samples), real: bestReal }
+          }
         }
       } else {
         // A spoof attempt must not be averaged away by a few good frames.
         streak = 0
+        samples.length = 0
         lastReason = liveness.reason
-
-        onProgress?.({
-          detected: false,
-          message: guidance(liveness.reason),
-          streak: 0,
-          required: requiredFrames,
-        })
+        if (liveness.reason === 'spoof') spoofSeen = true
+        report(false, guidance(liveness.reason))
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 120))
   }
 
-  return { ok: false, reason: streak > 0 ? lastReason : 'timeout' }
+  // One good frame is still better than nothing when time runs out.
+  if (samples.length > 0) return { ok: true, embedding: averaged(samples), real: bestReal }
+  return { ok: false, reason: spoofSeen ? 'spoof' : streak > 0 ? lastReason : 'timeout' }
 }
 
 /** 1:1 — confirm the person the fingerprint already identified. */

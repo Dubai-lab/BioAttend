@@ -89,7 +89,7 @@ export function FaceCapture({
     try {
       await getHuman()
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
         audio: false,
       })
       streamRef.current = stream

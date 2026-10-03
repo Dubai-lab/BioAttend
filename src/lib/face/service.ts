@@ -225,11 +225,12 @@ async function call<T>(path: string, body?: unknown, timeoutMs = 15000): Promise
 /**
  * Grab the current video frame as a JPEG data URL.
  *
- * Downscaled to 640px on the long edge: the detector runs at 640x640, so
- * anything larger is discarded after transfer, and a full-resolution frame
- * makes the request several times bigger for no gain in accuracy.
+ * Capped at 1280px on the long edge. The detector itself runs at 640x640,
+ * but ArcFace aligns its 112px face crop from the ORIGINAL image — so a
+ * frame shrunk to 640 first left a phone held in portrait (360px wide) with
+ * very few pixels on the face, and recognition scores fell with them.
  */
-export function captureFrame(video: HTMLVideoElement, maxEdge = 640): string {
+export function captureFrame(video: HTMLVideoElement, maxEdge = 1280): string {
   const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight))
   const width = Math.round(video.videoWidth * scale)
   const height = Math.round(video.videoHeight * scale)
