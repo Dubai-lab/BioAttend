@@ -20,6 +20,10 @@ same sense the tunnel itself is: anyone who finds it can send images to the
 face service while this window is open, and can read nothing back but an
 embedding of the image they sent. Close the window when you are finished.
 
+A quick tunnel loses its address when the network drops and never gets it
+back, so the address is checked every 30 seconds and the tunnel is reopened
+and republished when it stops answering.
+
 Standard library only. Run with run-face-tunnel.bat.
 """
 
@@ -31,6 +35,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -127,6 +132,53 @@ def service_running() -> bool:
         return False
 
 
+# How often the public address is checked, and how many misses in a row
+# count as a dead tunnel. A quick tunnel does not recover its address after the
+# network drops — the process keeps running while the address stops existing —
+# so the only cure is a new tunnel.
+CHECK_EVERY_SECONDS = 30
+MISSES_BEFORE_RESTART = 3
+URL_WAIT_SECONDS = 60
+
+
+def tunnel_answers(url: str) -> bool:
+    try:
+        request = urllib.request.Request(url + "/health", data=b"{}", method="POST")
+        with urllib.request.urlopen(request, timeout=15):
+            return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def start_tunnel(cloudflared: str) -> tuple[subprocess.Popen, str | None]:
+    """Start cloudflared and wait for it to print its public address."""
+    process = subprocess.Popen(
+        [cloudflared, "tunnel", "--url", LOCAL_SERVICE, "--no-autoupdate"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    found: list[str] = []
+
+    def read() -> None:
+        # Keeps draining output for the life of the process, or a full pipe
+        # would eventually stall cloudflared.
+        assert process.stdout is not None
+        for line in process.stdout:
+            match = TUNNEL_URL.search(line)
+            if match and not found:
+                found.append(match.group(0))
+
+    threading.Thread(target=read, daemon=True).start()
+
+    deadline = time.time() + URL_WAIT_SECONDS
+    while not found and time.time() < deadline and process.poll() is None:
+        time.sleep(0.5)
+    return process, (found[0] if found else None)
+
+
 def main() -> int:
     print("=" * 64)
     print("  BioAttend face service tunnel")
@@ -149,56 +201,67 @@ def main() -> int:
     publisher: Publisher | None = None
     if supabase_url and service_key:
         publisher = Publisher(supabase_url, service_key)
+        try:
+            publisher.ensure_bucket()
+        except Exception as err:  # noqa: BLE001
+            print(f"  Could not prepare storage: {err}")
+            publisher = None
     else:
         print("  .env.local has no Supabase URL or service role key, so the address")
         print("  cannot be published. Paste it on the phone under Devices instead.\n")
 
-    process = subprocess.Popen(
-        [cloudflared, "tunnel", "--url", LOCAL_SERVICE, "--no-autoupdate"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+    def publish(url: str | None) -> None:
+        if not publisher:
+            return
+        try:
+            publisher.publish(url)
+        except Exception as err:  # noqa: BLE001
+            print(f"  Could not publish the address: {err}")
 
+    process: subprocess.Popen | None = None
     published = False
     try:
-        assert process.stdout is not None
-        for line in process.stdout:
-            match = None if published else TUNNEL_URL.search(line)
-            if not match:
+        while True:
+            process, url = start_tunnel(cloudflared)
+            if not url:
+                print("  The tunnel did not start. Retrying in 15 seconds…")
+                process.terminate()
+                time.sleep(15)
                 continue
 
-            url = match.group(0)
+            publish(url)
             published = True
-            print(f"\n  Tunnel address:  {url}\n")
-
+            stamp = time.strftime("%H:%M:%S")
+            print(f"\n  [{stamp}] Tunnel address:  {url}")
             if publisher:
-                try:
-                    publisher.ensure_bucket()
-                    publisher.publish(url)
-                    print("  Published. Phones signed in to BioAttend will find it")
-                    print("  automatically — nothing needs to be typed.")
-                except Exception as err:  # noqa: BLE001
-                    print(f"  Could not publish it: {err}")
-                    print("  Paste the address on the phone under Devices instead.")
-
-            print("\n  Leave this window open. Close it (or press Ctrl+C) when finished;")
-            print("  the address stops working and is withdrawn.")
+                print("  Published — phones signed in to BioAttend find it automatically.")
+            print("  Leave this window open. Close it (or press Ctrl+C) to stop;")
+            print("  the address is then withdrawn.")
             print("=" * 64)
 
-        return process.wait()
+            misses = 0
+            while process.poll() is None:
+                time.sleep(CHECK_EVERY_SECONDS)
+                if tunnel_answers(url):
+                    misses = 0
+                    continue
+                misses += 1
+                if misses >= MISSES_BEFORE_RESTART:
+                    print(f"\n  [{time.strftime('%H:%M:%S')}] The tunnel address stopped "
+                          "working (usually a dropped connection). Opening a new one…")
+                    break
+
+            process.terminate()
+            publish(None)
+            time.sleep(3)
     except KeyboardInterrupt:
         return 0
     finally:
-        process.terminate()
-        if publisher and published:
-            try:
-                publisher.publish(None)
-                print("\n  Tunnel closed and address withdrawn.")
-            except Exception:  # noqa: BLE001
-                pass
+        if process is not None:
+            process.terminate()
+        if published:
+            publish(None)
+            print("\n  Tunnel closed and address withdrawn.")
 
 
 if __name__ == "__main__":
