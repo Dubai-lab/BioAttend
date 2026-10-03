@@ -67,6 +67,8 @@ export function Kiosk() {
     return stored ? (JSON.parse(stored) as KioskCredentials) : null
   })
   const [screen, setScreen] = useState<Screen>({ state: 'idle' })
+  // Re-entering the station details. Scanning and the camera pause meanwhile.
+  const [changingStation, setChangingStation] = useState(false)
   const [now, setNow] = useState(new Date())
   const [staffNumber, setStaffNumber] = useState('')
   // Tracks whether the fingerprint reader is usable, so the idle screen can
@@ -91,7 +93,7 @@ export function Kiosk() {
   // fails. Starting it on demand would cost several seconds while someone
   // stands waiting; a permanently warm stream costs nothing.
   useEffect(() => {
-    if (!credentials) return
+    if (!credentials || changingStation) return
     let cancelled = false
 
     async function startCamera() {
@@ -122,7 +124,7 @@ export function Kiosk() {
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
-  }, [credentials])
+  }, [credentials, changingStation])
 
   /** Show a staff member their own recent attendance. */
   const showRecord = useCallback(async (creds: KioskCredentials, staffId: string) => {
@@ -392,7 +394,7 @@ export function Kiosk() {
   // Continuous loop. Results linger briefly, then the station clears itself
   // so the next person never sees the previous person's name.
   useEffect(() => {
-    if (!credentials) return
+    if (!credentials || changingStation) return
     let cancelled = false
 
     async function loop() {
@@ -417,10 +419,20 @@ export function Kiosk() {
     return () => {
       cancelled = true
     }
-  }, [credentials, cycle])
+  }, [credentials, changingStation, cycle])
 
-  if (!credentials) {
-    return <KioskSetup onSave={setCredentials} />
+  if (!credentials || changingStation) {
+    return (
+      <KioskSetup
+        current={credentials}
+        onSave={(creds) => {
+          setCredentials(creds)
+          setChangingStation(false)
+          setScreen({ state: 'idle' })
+        }}
+        onCancel={credentials ? () => setChangingStation(false) : undefined}
+      />
+    )
   }
 
   return (
@@ -529,6 +541,21 @@ export function Kiosk() {
             : ' · Face check-in'}
         </p>
       )}
+
+      {/* Small and out of the way: this is for whoever sets the station up,
+          not for staff. It cannot be used to get in — new details are checked
+          against the database before they are accepted. */}
+      {screen.state !== 'enter_number' &&
+        screen.state !== 'my_record' &&
+        screen.state !== 'face' && (
+          <button
+            type="button"
+            onClick={() => setChangingStation(true)}
+            className="absolute bottom-5 right-4 rounded-control px-2 py-1 text-xs text-slate-600 hover:text-slate-300 sm:right-8"
+          >
+            Change station
+          </button>
+        )}
     </div>
   )
 }
@@ -772,13 +799,59 @@ function rejectionDetail(verdict: AttendanceVerdict): string {
  * The credentials identify the STATION, not a person — that is what stops
  * someone marking themselves present from a laptop at home.
  */
-function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
-  const [code, setCode] = useState('KIOSK-MAIN-01')
+function KioskSetup({
+  current,
+  onSave,
+  onCancel,
+}: {
+  current: KioskCredentials | null
+  onSave: (creds: KioskCredentials) => void
+  onCancel?: () => void
+}) {
+  const [code, setCode] = useState(current?.code ?? 'KIOSK-MAIN-01')
   const [token, setToken] = useState('')
-  const [readerId, setReaderId] = useState('HR-DESK-01')
+  const [readerId, setReaderId] = useState(current?.readerId ?? 'HR-DESK-01')
+  const [checking, setChecking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function save() {
-    const creds = { code: code.trim(), token: token.trim(), readerId: readerId.trim() }
+  /**
+   * Check the code and token with the database before keeping them.
+   *
+   * staff_attendance_lookup authenticates the station first and writes
+   * nothing, so asking it about a staff member who does not exist tells us
+   * only whether the station details are right: `invalid_kiosk` if not,
+   * `not_found` if they are. Without this a typo is discovered only when the
+   * first person is turned away.
+   */
+  async function save() {
+    const creds = {
+      code: code.trim().toUpperCase(),
+      token: token.trim(),
+      readerId: readerId.trim(),
+    }
+    setChecking(true)
+    setError(null)
+
+    const { data, error: rpcError } = await supabase.rpc('staff_attendance_lookup', {
+      p_kiosk_code: creds.code,
+      p_kiosk_token: creds.token,
+      p_staff_id: '00000000-0000-0000-0000-000000000000',
+      p_days: 1,
+    })
+    setChecking(false)
+
+    if (rpcError) {
+      setError(`Could not reach the server to check these details: ${rpcError.message}`)
+      return
+    }
+    if ((data as { reason?: string } | null)?.reason === 'invalid_kiosk') {
+      setError(
+        'That code and token do not match a registered station. Check both, or issue a ' +
+          'new token for this station under Access in the console.',
+      )
+      return
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(creds))
     onSave(creds)
   }
@@ -786,10 +859,13 @@ function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-shell-950 px-4 sm:px-6">
       <div className="w-full max-w-md rounded-card bg-shell-900 p-5 sm:p-8">
-        <h1 className="text-lg font-semibold text-white">Set up this station</h1>
+        <h1 className="text-lg font-semibold text-white">
+          {current ? 'Change station' : 'Set up this station'}
+        </h1>
         <p className="mt-1 text-sm text-slate-400">
-          Entered once per kiosk PC. These identify the station itself — staff never
-          sign in.
+          {current
+            ? `Currently ${current.code}. Enter the code and token of the station this device should be.`
+            : 'Entered once per kiosk device. These identify the station itself — staff never sign in.'}
         </p>
 
         <div className="mt-6 space-y-4">
@@ -797,6 +873,9 @@ function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
             <input
               value={code}
               onChange={(e) => setCode(e.target.value)}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
               className="id-text w-full rounded-control bg-shell-950 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-brand-500/40"
             />
           </Labelled>
@@ -806,7 +885,7 @@ function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
               type="password"
               value={token}
               onChange={(e) => setToken(e.target.value)}
-              placeholder="From register_kiosk.sql"
+              placeholder="Shown once when the station was registered"
               className="w-full rounded-control bg-shell-950 px-3 py-2 text-sm text-white placeholder:text-slate-600 outline-none focus:ring-2 focus:ring-brand-500/40"
             />
           </Labelled>
@@ -820,15 +899,35 @@ function KioskSetup({ onSave }: { onSave: (creds: KioskCredentials) => void }) {
           </Labelled>
         </div>
 
+        {error && (
+          <p
+            role="alert"
+            className="mt-4 rounded-control bg-danger-500/15 px-3 py-2 text-sm text-danger-500"
+          >
+            {error}
+          </p>
+        )}
+
         <button
           type="button"
-          onClick={save}
-          disabled={!code.trim() || !token.trim() || !readerId.trim()}
+          onClick={() => void save()}
+          disabled={checking || !code.trim() || !token.trim() || !readerId.trim()}
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-control bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Loader2 className="hidden size-4 animate-spin" aria-hidden="true" />
-          Start station
+          {checking && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {checking ? 'Checking…' : current ? 'Switch station' : 'Start station'}
         </button>
+
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={checking}
+            className="mt-3 w-full rounded-control px-4 py-2 text-sm text-slate-400 hover:text-white"
+          >
+            Cancel — stay on {current?.code}
+          </button>
+        )}
       </div>
     </div>
   )

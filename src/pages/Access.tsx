@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,6 +12,8 @@ import {
   Eye,
   EyeOff,
   Mail,
+  RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -413,15 +415,51 @@ function Kiosks({
   onChanged: (message: string) => void
   onError: (message: string) => void
 }) {
-  const [code, setCode] = useState('KIOSK-')
+  const [code, setCode] = useState('')
   const [label, setLabel] = useState('')
   const [location, setLocation] = useState('')
   const [readerId, setReaderId] = useState('HR-DESK-01')
   const [token, setToken] = useState(() => generateToken())
   const [busy, setBusy] = useState(false)
   const [issued, setIssued] = useState<{ code: string; token: string } | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
+  const formRef = useRef<HTMLDivElement>(null)
+
+  // Letters and digits in dash-separated groups, e.g. KIOSK-MAIN-01. A code
+  // ending in a dash is almost always the prefilled "KIOSK-" saved by mistake.
+  const codeValid = /^[A-Z0-9]+(-[A-Z0-9]+)+$/.test(code)
+  const existing = kiosks.find((kiosk) => kiosk.code === code)
+
+  /** Load a station into the form so saving issues it a new token. */
+  function prepareNewToken(kiosk: Kiosk) {
+    setCode(kiosk.code)
+    setLabel(kiosk.label)
+    setLocation(kiosk.location ?? '')
+    setReaderId(kiosk.reader_id ?? '')
+    setToken(generateToken())
+    setIssued(null)
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  /**
+   * Remove a station outright.
+   *
+   * Its attendance history survives: the records keep their times and simply
+   * lose the link to a station that no longer exists. The station itself is
+   * locked out at once, because its token no longer matches anything.
+   */
+  async function remove(kiosk: Kiosk) {
+    setConfirmRemove(null)
+    const { error } = await supabase.from('kiosks').delete().eq('id', kiosk.id)
+    if (error) return onError(error.message)
+
+    await recordAudit(actorId, 'kiosk.removed', 'kiosks', kiosk.id, { code: kiosk.code })
+    if (issued?.code === kiosk.code) setIssued(null)
+    onChanged(`Station ${kiosk.code} removed. It can no longer record attendance.`)
+  }
 
   async function register() {
+    const rotating = existing !== undefined
     setBusy(true)
     const { data, error } = await supabase.rpc('register_kiosk', {
       p_code: code,
@@ -445,12 +483,25 @@ function Kiosks({
       )
     }
 
-    await recordAudit(actorId, 'kiosk.registered', 'kiosks', null, { code, label })
+    await recordAudit(
+      actorId,
+      rotating ? 'kiosk.token_rotated' : 'kiosk.registered',
+      'kiosks',
+      existing?.id ?? null,
+      { code, label },
+    )
 
     // Shown once. Only the bcrypt hash is stored, so it cannot be recovered.
     setIssued({ code, token })
     setToken(generateToken())
-    onChanged(`Station ${code} registered.`)
+    setCode('')
+    setLabel('')
+    setLocation('')
+    onChanged(
+      rotating
+        ? `New token issued for ${code}. The old one stopped working immediately.`
+        : `Station ${code} registered.`,
+    )
   }
 
   return (
@@ -484,7 +535,50 @@ function Kiosks({
             )}
             {kiosks.map((kiosk) => (
               <tr key={kiosk.id} className="border-b border-slate-100 last:border-0">
-                <td className="id-text px-3 py-2.5 text-slate-900">{kiosk.code}</td>
+                <td className="px-3 py-2.5">
+                  <p className="id-text text-slate-900">{kiosk.code}</p>
+                  <p className="text-xs text-muted">{kiosk.label}</p>
+                  <div className="mt-1.5">
+                    {confirmRemove === kiosk.id ? (
+                      <span className="inline-flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-danger-700">Remove {kiosk.code}?</span>
+                        <button
+                          type="button"
+                          onClick={() => void remove(kiosk)}
+                          className="rounded-control bg-danger-700 px-2.5 py-1 text-xs font-medium text-white hover:bg-danger-500"
+                        >
+                          Remove
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemove(null)}
+                          className="rounded-control border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          Keep
+                        </button>
+                      </span>
+                    ) : (
+                      <span className="inline-flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => prepareNewToken(kiosk)}
+                          className="inline-flex items-center gap-1.5 text-xs text-slate-600 hover:underline"
+                        >
+                          <RefreshCw className="size-3.5" aria-hidden="true" />
+                          New token
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmRemove(kiosk.id)}
+                          className="inline-flex items-center gap-1.5 text-xs text-danger-700 hover:underline"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden="true" />
+                          Remove
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-2.5 text-slate-700">{kiosk.location ?? '—'}</td>
                 <td className="id-text px-3 py-2.5 text-slate-700">
                   {kiosk.reader_id ?? '—'}
@@ -526,22 +620,32 @@ function Kiosks({
         </div>
       )}
 
-      <div className="mt-5 rounded-control border border-slate-200 bg-slate-50 p-4">
+      <div
+        ref={formRef}
+        className="mt-5 scroll-mt-4 rounded-control border border-slate-200 bg-slate-50 p-4"
+      >
         <h3 className="text-sm font-medium text-slate-800">
-          Register a station, or rotate its token
+          {existing ? `New token for ${existing.code}` : 'Register a station'}
         </h3>
         <p className="mt-1 text-xs text-muted">
-          Using an existing code replaces that station&apos;s token — the way to
-          respond to a token being exposed.
+          {existing
+            ? 'Saving replaces this station’s token. The old one stops working at once, so enter the new one at the station straight away.'
+            : 'To give an existing station a new token — after entering the wrong one at a kiosk, or if it was exposed — press New token beside it above.'}
         </p>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Station code">
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s+/g, '-'))}
+              placeholder="KIOSK-MAIN-01"
               className="id-text w-full rounded-control border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
             />
+            {!codeValid && !existing && code !== '' && (
+              <span className="mt-1 block text-xs text-danger-700">
+                Use letters and digits in dash-separated parts, e.g. KIOSK-MAIN-01.
+              </span>
+            )}
           </Field>
           <Field label="Label">
             <input
@@ -574,7 +678,7 @@ function Kiosks({
               <input
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="id-text flex-1 rounded-control border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
+                className="id-text min-w-0 flex-1 rounded-control border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"
               />
               <button
                 type="button"
@@ -590,7 +694,7 @@ function Kiosks({
         <button
           type="button"
           onClick={() => void register()}
-          disabled={busy || code.length < 4 || !label.trim() || token.length < 12}
+          disabled={busy || (!codeValid && !existing) || !label.trim() || token.length < 12}
           className="mt-3 flex items-center gap-2 rounded-control bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
           {busy ? (
@@ -598,7 +702,7 @@ function Kiosks({
           ) : (
             <Monitor className="size-4" aria-hidden="true" />
           )}
-          Register station
+          {existing ? 'Issue new token' : 'Register station'}
         </button>
       </div>
     </section>

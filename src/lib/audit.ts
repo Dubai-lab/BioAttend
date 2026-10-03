@@ -28,6 +28,7 @@ export type AuditAction =
   | 'reader.registered'
   | 'kiosk.registered'
   | 'kiosk.token_rotated'
+  | 'kiosk.removed'
   | 'supervisor.assigned'
   | 'supervisor.removed'
 
