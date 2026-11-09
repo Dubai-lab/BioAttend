@@ -5,7 +5,9 @@ import {
   CheckCircle2,
   Clock,
   Fingerprint,
+  Hash,
   Loader2,
+  RotateCcw,
   ScanFace,
   ServerCrash,
   XCircle,
@@ -30,6 +32,23 @@ import type { AttendanceVerdict } from '@/types/database'
 
 const STORAGE_KEY = 'bioattend.kiosk.credentials'
 const RESULT_DISPLAY_MS = 5000
+
+/**
+ * Fingerprint attempts before the station offers face or staff ID.
+ *
+ * Switching to the camera on the first failed press confused people: they
+ * pressed a finger, saw no "not recognised", and were suddenly being asked to
+ * look at a camera. A person whose press was simply smudged deserves another
+ * go; a person whose finger genuinely will not read should then be given a
+ * choice, not have one made for them.
+ */
+const MAX_FINGER_ATTEMPTS = 3
+/** How long "Not recognised — try again" stays up before the next press. */
+const RETRY_DISPLAY_MS = 1800
+/** A gap this long between failures means a different person is at the reader. */
+const ATTEMPT_RESET_MS = 20000
+/** The choice screen returns to waiting if nobody picks an option. */
+const CHOICE_TIMEOUT_MS = 30000
 
 /**
  * Minimum match score to accept an identification.
@@ -89,7 +108,14 @@ type Screen =
   | { state: 'result'; verdict: AttendanceVerdict }
   /** `detail` is diagnostic text shown only while tuning; blank in normal use. */
   | { state: 'unknown'; detail?: string }
-  /** Fingerprint failed; asking who they are before the camera confirms it. */
+  /** A fingerprint press failed; the person may try again. */
+  | { state: 'finger_failed'; attempt: number; detail?: string }
+  /**
+   * Fingerprint could not be used — three failed presses, or no reader — so
+   * the person chooses face or staff ID instead.
+   */
+  | { state: 'choose'; reason: 'attempts' | 'reader_unavailable' }
+  /** Staff number entry; the camera then confirms it is that person. */
   | { state: 'enter_number' }
   | { state: 'face'; message: string; progress?: FaceScanProgress }
   | { state: 'error'; message: string }
@@ -118,6 +144,14 @@ export function Kiosk() {
   const intent = useRef<'check_in' | 'lookup'>('check_in')
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  // Face and staff ID both need the camera; without one they are not offered.
+  const [cameraAvailable, setCameraAvailable] = useState(true)
+  // Consecutive failed fingerprint presses by the person at the reader.
+  const fingerFailures = useRef(0)
+  const lastFingerFailure = useRef(0)
+  // Set when the person leaves a screen with nothing to show, so the station
+  // goes straight back to scanning instead of pausing on an idle screen.
+  const skipHold = useRef(false)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
@@ -142,6 +176,7 @@ export function Kiosk() {
           return
         }
         streamRef.current = stream
+        setCameraAvailable(true)
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           await videoRef.current.play()
@@ -150,6 +185,7 @@ export function Kiosk() {
         // No camera is survivable — fingerprint still works, face fallback
         // simply will not be offered.
         console.warn('[kiosk] no camera available; face fallback disabled')
+        if (!cancelled) setCameraAvailable(false)
       }
     }
 
@@ -228,13 +264,12 @@ export function Kiosk() {
    * against and the margin rule never ran.
    */
   const tryFaceIdentify = useCallback(
-    async (creds: KioskCredentials) => {
+    async (creds: KioskCredentials): Promise<'keypad' | 'done'> => {
       await waitForCamera(streamRef)
       const video = videoRef.current
       if (!video || !streamRef.current) {
-        awaitingInput.current = true
-        setScreen({ state: 'enter_number' })
-        return
+        setScreen({ state: 'unknown', detail: 'The camera is not available — see your supervisor' })
+        return 'done'
       }
 
       setScreen({ state: 'face', message: 'Look at the camera' })
@@ -249,11 +284,12 @@ export function Kiosk() {
         if (!scan.ok) {
           if (scan.reason === 'spoof') {
             setScreen({ state: 'unknown', detail: 'A photo or screen cannot be used' })
-            return
+            return 'done'
           }
+          // No clear face seen: ask who they are, then confirm with the camera.
           awaitingInput.current = true
           setScreen({ state: 'enter_number' })
-          return
+          return 'keypad'
         }
 
         const result = await identifyByFace(creds.code, creds.token, scan.embedding)
@@ -266,20 +302,22 @@ export function Kiosk() {
             'face',
             result.similarity ? Math.round(result.similarity * 100) : null,
           )
-          return
+          return 'done'
         }
 
         if (needsStaffNumber(result)) {
           awaitingInput.current = true
           setScreen({ state: 'enter_number' })
-          return
+          return 'keypad'
         }
 
         // needsStaffNumber is false only when the station itself was refused.
         setScreen({ state: 'unknown', detail: STATION_REJECTED })
+        return 'done'
       } catch (err) {
         console.warn('[kiosk] face identify failed:', err)
         setScreen(faceFailure(err))
+        return 'done'
       }
     },
     [record],
@@ -357,81 +395,143 @@ export function Kiosk() {
   )
 
   /**
+   * A fingerprint press failed. Say so, and let the person try again — up to
+   * MAX_FINGER_ATTEMPTS times. Only then are face and staff ID offered, and
+   * the person chooses; the station never switches method on its own.
+   *
+   * Returns how long the message should stay up before the next press.
+   */
+  const fingerFailed = useCallback((detail?: string): number => {
+    const now = Date.now()
+    if (now - lastFingerFailure.current > ATTEMPT_RESET_MS) fingerFailures.current = 0
+    lastFingerFailure.current = now
+    fingerFailures.current += 1
+
+    if (fingerFailures.current >= MAX_FINGER_ATTEMPTS) {
+      fingerFailures.current = 0
+      awaitingInput.current = true // hold the scan loop until they choose
+      setScreen({ state: 'choose', reason: 'attempts' })
+      return 0
+    }
+
+    setScreen({ state: 'finger_failed', attempt: fingerFailures.current, detail })
+    return RETRY_DISPLAY_MS
+  }, [])
+
+  /**
    * One scan cycle: wait for a finger, identify, record, display.
    *
    * The loop restarts itself so the station is always live — nobody should
-   * have to click anything to clock in.
+   * have to click anything to clock in. Returns how long to hold whatever is
+   * on screen before the next cycle starts.
    */
-  const cycle = useCallback(async (creds: KioskCredentials) => {
-    setScreen({ state: 'scanning' })
+  const cycle = useCallback(
+    async (creds: KioskCredentials): Promise<number> => {
+      setScreen({ state: 'scanning' })
 
-    try {
-      const match = await bridge.identify()
-      setFingerprintAvailable(true)
+      try {
+        const match = await bridge.identify()
+        setFingerprintAvailable(true)
 
-      if (!match.matched || match.slot === undefined) {
-        console.info('[kiosk] no fingerprint match — trying face')
-        await tryFaceIdentify(creds)
-        return
-      }
-
-      console.info('[kiosk] match: slot', match.slot, 'score', match.score)
-
-      if ((match.score ?? 0) < MIN_MATCH_SCORE) {
-        // A weak match is a rejection, never a guess.
-        console.info('[kiosk] fingerprint match too weak — trying face')
-        await tryFaceIdentify(creds)
-        return
-      }
-
-      const staffId = await staffForSlot(creds.readerId, match.slot)
-      if (!staffId) {
-        setScreen({
-          state: 'error',
-          message: 'This reader is out of sync. Ask an administrator to re-sync it.',
-        })
-        return
-      }
-
-      await record(creds, staffId, 'fingerprint', match.score ?? null)
-    } catch (err) {
-      // The fingerprint service being down must not take the station down with
-      // it. A reader that fails at 6am should leave face check-in working, not
-      // strand a whole shift — the entire point of a second modality is that
-      // one failing does not stop the other.
-      if (err instanceof BridgeOfflineError) {
-        setFingerprintAvailable(false)
-        if (await waitForCamera(streamRef)) {
-          console.info('[kiosk] fingerprint service unavailable — face only')
-          await tryFaceIdentify(creds)
-          return
+        if (!match.matched || match.slot === undefined) {
+          console.info('[kiosk] no fingerprint match')
+          return fingerFailed()
         }
-        // Neither modality is available. Now it is genuinely out of service.
-        setScreen({
-          state: 'error',
-          message: 'Neither the fingerprint reader nor a camera is available.',
-        })
-        return
+
+        console.info('[kiosk] match: slot', match.slot, 'score', match.score)
+
+        if ((match.score ?? 0) < MIN_MATCH_SCORE) {
+          // A weak match is a rejection, never a guess.
+          console.info('[kiosk] fingerprint match too weak')
+          return fingerFailed()
+        }
+
+        const staffId = await staffForSlot(creds.readerId, match.slot)
+        if (!staffId) {
+          setScreen({
+            state: 'error',
+            message: 'This reader is out of sync. Ask an administrator to re-sync it.',
+          })
+          return RESULT_DISPLAY_MS
+        }
+
+        fingerFailures.current = 0
+        await record(creds, staffId, 'fingerprint', match.score ?? null)
+        return RESULT_DISPLAY_MS
+      } catch (err) {
+        // The fingerprint service being down must not take the station down
+        // with it — face and staff ID still work. The person is offered them
+        // rather than being switched over silently.
+        if (err instanceof BridgeOfflineError) {
+          setFingerprintAvailable(false)
+          if (await waitForCamera(streamRef)) {
+            console.info('[kiosk] fingerprint service unavailable — offering face or staff ID')
+            awaitingInput.current = true
+            setScreen({ state: 'choose', reason: 'reader_unavailable' })
+            return 0
+          }
+          // Neither modality is available. Now it is genuinely out of service.
+          setScreen({
+            state: 'error',
+            message: 'Neither the fingerprint reader nor a camera is available.',
+          })
+          return RESULT_DISPLAY_MS
+        }
+
+        const message = err instanceof Error ? err.message : String(err)
+
+        // Nobody came to the sensor. Not an error — go back to waiting.
+        if (message.toLowerCase().includes('timed out')) {
+          setScreen({ state: 'idle' })
+          return 0
+        }
+
+        // A device-level complaint — smudged sensor, poor press, empty buffer.
+        // Raw device codes mean nothing to the person at the sensor, so the
+        // detail is logged and they are told to try again. It counts as an
+        // attempt, like any other press that did not identify them.
+        console.warn('[kiosk] scan failed:', message)
+        return fingerFailed('The reader could not read that press')
       }
+    },
+    [fingerFailed, record],
+  )
 
-      const message = err instanceof Error ? err.message : String(err)
-
-      // Nobody came to the sensor. Not an error — go back to waiting.
-      if (message.toLowerCase().includes('timed out')) {
-        setScreen({ state: 'idle' })
-        return
-      }
-
-      // A device-level complaint — smudged sensor, poor press, empty buffer.
-      // Ask the person to try again rather than declaring the kiosk broken;
-      // a station that says "Out of service" over one bad press is a station
-      // nobody trusts.
-      // Raw device codes mean nothing to the person at the sensor. Log the
-      // detail for whoever maintains the system; show them an instruction.
-      console.warn('[kiosk] scan failed:', message)
-      setScreen({ state: 'unknown', detail: 'The reader could not read that press — try again' })
-    }
+  /** Leave the choice screen or keypad and go back to waiting for a finger. */
+  const backToIdle = useCallback(() => {
+    fingerFailures.current = 0
+    intent.current = 'check_in'
+    setStaffNumber('')
+    skipHold.current = true
+    awaitingInput.current = false
+    setScreen({ state: 'idle' })
   }, [])
+
+  /** The person chose face after the fingerprint could not be used. */
+  const chooseFace = useCallback(
+    async (creds: KioskCredentials) => {
+      awaitingInput.current = true // keep the scan loop held while the camera works
+      const outcome = await tryFaceIdentify(creds)
+      // If face could not decide, the keypad is now up and owns the hold.
+      if (outcome === 'done') awaitingInput.current = false
+    },
+    [tryFaceIdentify],
+  )
+
+  /** The person chose staff ID: type the number, then the camera confirms it. */
+  const chooseStaffId = useCallback(() => {
+    awaitingInput.current = true
+    setStaffNumber('')
+    setScreen({ state: 'enter_number' })
+  }, [])
+
+  // Nobody answered the choice screen: the person has walked away, so the
+  // next one must not find it waiting for them.
+  useEffect(() => {
+    if (screen.state !== 'choose') return
+    const timer = setTimeout(backToIdle, CHOICE_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [screen, backToIdle])
 
   // Continuous loop. Results linger briefly, then the station clears itself
   // so the next person never sees the previous person's name.
@@ -441,19 +541,25 @@ export function Kiosk() {
 
     async function loop() {
       while (!cancelled) {
-        await cycle(credentials!)
+        let hold = await cycle(credentials!)
         if (cancelled) break
 
-        // Hold while the keypad is up — restarting the fingerprint scan
-        // underneath someone who is typing would wipe their entry.
-        while (awaitingInput.current && !cancelled) {
-          await new Promise((resolve) => setTimeout(resolve, 200))
+        // Hold while the person is choosing, typing or being checked by face —
+        // restarting the fingerprint scan underneath them would wipe their
+        // entry. Whatever they end on is a result, so it then lingers.
+        if (awaitingInput.current) {
+          while (awaitingInput.current && !cancelled) {
+            await new Promise((resolve) => setTimeout(resolve, 200))
+          }
+          // Cancel and "try fingerprint again" have nothing to linger over.
+          hold = skipHold.current ? 0 : RESULT_DISPLAY_MS
+          skipHold.current = false
         }
         if (cancelled) break
 
         // Let the result linger, then clear so the next person never sees the
         // previous person's name.
-        await new Promise((resolve) => setTimeout(resolve, RESULT_DISPLAY_MS))
+        if (hold > 0) await new Promise((resolve) => setTimeout(resolve, hold))
       }
     }
 
@@ -535,23 +641,22 @@ export function Kiosk() {
       </div>
 
       {screen.state === 'my_record' ? (
-        <MyRecord
-          data={screen.data}
-          onClose={() => {
-            awaitingInput.current = false
-            setScreen({ state: 'idle' })
-          }}
-        />
+        <MyRecord data={screen.data} onClose={backToIdle} />
       ) : screen.state === 'enter_number' ? (
         <StaffNumberEntry
           value={staffNumber}
           onChange={setStaffNumber}
           onSubmit={() => void verifyByNumber(credentials, staffNumber)}
-          onCancel={() => {
-            setStaffNumber('')
-            awaitingInput.current = false
-            setScreen({ state: 'idle' })
-          }}
+          onCancel={backToIdle}
+        />
+      ) : screen.state === 'choose' ? (
+        <ChooseMethod
+          reason={screen.reason}
+          cameraAvailable={cameraAvailable}
+          onFace={() => void chooseFace(credentials)}
+          onStaffId={chooseStaffId}
+          onRetry={screen.reason === 'attempts' ? backToIdle : undefined}
+          onCancel={backToIdle}
         />
       ) : (
         <ScreenBody screen={screen} fingerprintAvailable={fingerprintAvailable} />
@@ -575,7 +680,7 @@ export function Kiosk() {
 
       {/* Hidden while the keypad or a record is up: it is absolutely
           positioned and would otherwise overlap their controls. */}
-      {screen.state !== 'enter_number' && screen.state !== 'my_record' && (
+      {screen.state !== 'enter_number' && screen.state !== 'my_record' && screen.state !== 'choose' && (
         <p className="absolute bottom-6 text-xs text-slate-600">
           {credentials.code}
           {fingerprintAvailable
@@ -589,6 +694,7 @@ export function Kiosk() {
           against the database before they are accepted. */}
       {screen.state !== 'enter_number' &&
         screen.state !== 'my_record' &&
+        screen.state !== 'choose' &&
         screen.state !== 'face' && (
           <button
             type="button"
@@ -610,18 +716,16 @@ function ScreenBody({
   fingerprintAvailable: boolean
 }) {
   if (screen.state === 'idle' || screen.state === 'scanning') {
-    // With the reader unavailable the station still works by face, so it
-    // prompts for that instead of pointing at a sensor that will not respond.
+    // With the reader unavailable the station still works by face or staff
+    // ID, so it says so instead of pointing at a sensor that will not respond.
     if (!fingerprintAvailable) {
       return (
         <div className="flex flex-col items-center gap-8">
           <div className="flex size-28 sm:size-40 items-center justify-center rounded-full border-4 border-slate-700">
             <ScanFace className="size-14 sm:size-20 text-info-500" aria-hidden="true" />
           </div>
-          <p className="kiosk-headline text-white">Look at the camera</p>
-          <p className="kiosk-subhead">
-            The fingerprint reader is unavailable — check in by face
-          </p>
+          <p className="kiosk-headline text-white">Fingerprint unavailable</p>
+          <p className="kiosk-subhead">Check in with your face or staff ID</p>
         </div>
       )
     }
@@ -644,7 +748,42 @@ function ScreenBody({
     )
   }
 
-  if (screen.state === 'enter_number' || screen.state === 'my_record') return null
+  if (screen.state === 'enter_number' || screen.state === 'my_record' || screen.state === 'choose') {
+    return null
+  }
+
+  if (screen.state === 'finger_failed') {
+    const left = MAX_FINGER_ATTEMPTS - screen.attempt
+    return (
+      <div className="flex flex-col items-center gap-6 text-center">
+        <div className="flex size-28 items-center justify-center rounded-full bg-warn-500/15">
+          <XCircle className="size-16 text-warn-500" aria-hidden="true" />
+        </div>
+        <p className="kiosk-headline text-white">Not recognised</p>
+        <p className="kiosk-subhead max-w-2xl">
+          {screen.detail ?? 'Your fingerprint was not recognised'} — place your finger again,
+          flat and still
+        </p>
+
+        {/* One pip per attempt, so the person can see how many tries remain. */}
+        <div className="flex items-center gap-2.5" aria-label={`Attempt ${screen.attempt} of ${MAX_FINGER_ATTEMPTS}`}>
+          {Array.from({ length: MAX_FINGER_ATTEMPTS }, (_, index) => (
+            <span
+              key={index}
+              className={cn(
+                'size-3 rounded-full',
+                index < screen.attempt ? 'bg-warn-500' : 'bg-slate-600',
+              )}
+            />
+          ))}
+        </div>
+        <p className="text-sm text-slate-400 sm:text-base">
+          Attempt {screen.attempt} of {MAX_FINGER_ATTEMPTS}
+          {left > 0 && ` · after ${left === 1 ? 'one more try' : `${left} more tries`} you can use your face or staff ID`}
+        </p>
+      </div>
+    )
+  }
 
   if (screen.state === 'face') {
     return (
@@ -653,7 +792,7 @@ function ScreenBody({
           <ScanFace className="size-14 sm:size-20 text-info-500" aria-hidden="true" />
         </div>
         <p className="kiosk-headline text-white">{screen.message}</p>
-        <p className="kiosk-subhead">Fingerprint did not read — checking your face</p>
+        <p className="kiosk-subhead">Checking your face</p>
       </div>
     )
   }
@@ -756,6 +895,103 @@ function ScreenBody({
       headline={rejectionHeadline(verdict.reason)}
       detail={rejectionDetail(verdict)}
     />
+  )
+}
+
+/**
+ * Shown after three failed fingerprint presses, or when the reader is
+ * unavailable. The person picks how to identify themselves — the station does
+ * not decide for them.
+ *
+ * Both options end at the camera: face identifies the person directly, and
+ * staff ID asks who they are and then confirms it by face. Neither lets
+ * someone check in for a colleague by knowing their number.
+ */
+function ChooseMethod({
+  reason,
+  cameraAvailable,
+  onFace,
+  onStaffId,
+  onRetry,
+  onCancel,
+}: {
+  reason: 'attempts' | 'reader_unavailable'
+  cameraAvailable: boolean
+  onFace: () => void
+  onStaffId: () => void
+  onRetry?: () => void
+  onCancel: () => void
+}) {
+  const option =
+    'flex w-full items-center gap-4 rounded-card border-2 px-5 py-4 text-left transition-colors sm:gap-5 sm:px-6 sm:py-5'
+
+  return (
+    <div className="flex w-full max-w-xl flex-col items-center gap-6 text-center">
+      <div>
+        <p className="kiosk-headline text-white">
+          {reason === 'attempts' ? 'Fingerprint not recognised' : 'Fingerprint unavailable'}
+        </p>
+        <p className="kiosk-subhead mt-3">
+          {cameraAvailable
+            ? 'Choose another way to record your attendance'
+            : 'The camera is not available either — please see your supervisor'}
+        </p>
+      </div>
+
+      {cameraAvailable && (
+        <div className="grid w-full gap-3">
+          <button
+            type="button"
+            onClick={onFace}
+            className={cn(option, 'border-info-500/50 bg-info-500/10 hover:bg-info-500/20')}
+          >
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-info-500/20 sm:size-14">
+              <ScanFace className="size-7 text-info-500 sm:size-8" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold text-white sm:text-2xl">Use my face</span>
+              <span className="block text-sm text-slate-400 sm:text-base">Look at the camera</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onStaffId}
+            className={cn(option, 'border-brand-500/50 bg-brand-500/10 hover:bg-brand-500/20')}
+          >
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-500/20 sm:size-14">
+              <Hash className="size-7 text-brand-400 sm:size-8" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-lg font-semibold text-white sm:text-2xl">Use my staff ID</span>
+              <span className="block text-sm text-slate-400 sm:text-base">
+                Enter your number, then the camera confirms it is you
+              </span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="flex items-center gap-2 rounded-card border border-slate-700 px-5 py-2.5 text-sm text-slate-300 hover:bg-shell-900 sm:text-base"
+          >
+            <RotateCcw className="size-4" aria-hidden="true" />
+            Try fingerprint again
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-card px-5 py-2.5 text-sm text-slate-400 hover:text-white sm:text-base"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   )
 }
 

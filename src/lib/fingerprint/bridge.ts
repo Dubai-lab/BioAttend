@@ -97,10 +97,21 @@ export interface EnrollResult {
 
 /** Where a stepwise enrollment has got to, for display at the sensor. */
 export interface EnrollStage {
-  kind: 'waiting' | 'captured' | 'lift' | 'merging' | 'done'
+  kind: 'waiting' | 'captured' | 'lift' | 'merging' | 'done' | 'retry'
   pass: number
   of: number
+  /** For `retry`: what was wrong with the press, in the reader's words. */
+  message?: string
 }
+
+/**
+ * Reader codes that mean "that press was poor", not "the device failed": could
+ * not capture (0x03), blurred (0x06), too few features (0x07), empty buffer
+ * (0x15). The press is repeated rather than the whole finger restarted.
+ */
+const RETRYABLE_PRESS_CODES = new Set([0x03, 0x06, 0x07, 0x15])
+/** Repeats allowed for any single press before the finger is abandoned. */
+const PRESS_RETRIES = 3
 
 export interface IdentifyResult {
   matched: boolean
@@ -169,8 +180,23 @@ export const bridge = {
     onProgress: (stage: EnrollStage) => void,
   ): Promise<EnrollResult> {
     for (let pass = 1; pass <= passes; pass++) {
-      onProgress({ kind: 'waiting', pass, of: passes })
-      await bridge.capturePass(pass === 1 ? 1 : 2)
+      // A poor press repeats that press only. Restarting all three because one
+      // was smudged made enrolment feel endless and taught nothing.
+      for (let attempt = 0; ; attempt++) {
+        onProgress({ kind: 'waiting', pass, of: passes })
+        try {
+          await bridge.capturePass(pass === 1 ? 1 : 2)
+          break
+        } catch (err) {
+          const retryable =
+            err instanceof ReaderError &&
+            err.code !== undefined &&
+            RETRYABLE_PRESS_CODES.has(err.code)
+          if (!retryable || attempt >= PRESS_RETRIES) throw err
+          onProgress({ kind: 'retry', pass, of: passes, message: err.message })
+          await bridge.waitForRemoval()
+        }
+      }
       onProgress({ kind: 'captured', pass, of: passes })
 
       if (pass < passes) {

@@ -282,11 +282,12 @@ function CaptureProgress({ stage }: { stage: EnrollStage }) {
     waiting: `Place your finger on the sensor — scan ${stage.pass} of ${stage.of}`,
     captured: `Scan ${stage.pass} of ${stage.of} captured`,
     lift: 'Lift your finger, then place the same finger again',
+    retry: `Scan ${stage.pass} was not clear — lift your finger and press it again, flat, covering the whole sensor`,
     merging: 'Combining scans into one template…',
     done: 'Done',
   }
 
-  const isLift = stage.kind === 'lift'
+  const isLift = stage.kind === 'lift' || stage.kind === 'retry'
 
   return (
     <div

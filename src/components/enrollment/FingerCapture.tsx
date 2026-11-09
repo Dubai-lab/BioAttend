@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Fingerprint, Check, Loader2, AlertCircle, RotateCcw } from 'lucide-react'
 import {
   BridgeOfflineError,
+  ReaderError,
   bridge,
   type EnrollStage,
 } from '@/lib/fingerprint/bridge'
@@ -72,9 +73,13 @@ export function FingerCapture({
       setError(
         err instanceof BridgeOfflineError
           ? err.message
-          : err instanceof Error
-            ? err.message
-            : String(err),
+          : err instanceof ReaderError && err.code !== undefined && [0x03, 0x06, 0x07, 0x15].includes(err.code)
+            ? 'This finger did not give a clear print after several tries. Wipe the sensor ' +
+              'and the fingertip, warm or slightly moisten a very dry finger, and try again — ' +
+              'or enrol a different finger.'
+            : err instanceof Error
+              ? err.message
+              : String(err),
       )
     } finally {
       setActive(null)
@@ -179,15 +184,20 @@ export function FingerCapture({
 }
 
 function CaptureProgress({ stage }: { stage: EnrollStage }) {
+  // The bridge prefixes the operation ("Extract features: …"); the person at
+  // the sensor only needs the advice that follows it.
+  const advice = stage.message?.replace(/^[^:]+:\s*/, '')
+
   const instruction: Record<EnrollStage['kind'], string> = {
     waiting: `Place the finger on the sensor — scan ${stage.pass} of ${stage.of}`,
     captured: `Scan ${stage.pass} of ${stage.of} captured`,
     lift: 'Lift the finger, then place the same finger again',
+    retry: `Scan ${stage.pass} was not clear${advice ? ` — ${advice.charAt(0).toLowerCase()}${advice.slice(1)}` : ''}. Lift the finger and press it again, flat, covering the whole sensor.`,
     merging: 'Combining scans into one template…',
     done: 'Done',
   }
 
-  const isLift = stage.kind === 'lift'
+  const isLift = stage.kind === 'lift' || stage.kind === 'retry'
 
   return (
     <div
@@ -222,10 +232,11 @@ function CaptureProgress({ stage }: { stage: EnrollStage }) {
           const number = index + 1
           const complete =
             number < stage.pass ||
-            (number === stage.pass && stage.kind !== 'waiting') ||
+            (number === stage.pass && stage.kind !== 'waiting' && stage.kind !== 'retry') ||
             stage.kind === 'merging' ||
             stage.kind === 'done'
-          const current = number === stage.pass && stage.kind === 'waiting'
+          const current =
+            number === stage.pass && (stage.kind === 'waiting' || stage.kind === 'retry')
 
           return (
             <span

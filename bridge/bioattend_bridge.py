@@ -92,6 +92,62 @@ def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0) -> None:
     raise TimeoutError("Timed out waiting for a finger.")
 
 
+# Codes that describe a poor image rather than a broken device: the finger
+# was only half down, moving, smudged or dry. Retaking the image while the
+# finger stays on the sensor usually clears them.
+RETRYABLE_CAPTURE_CODES = {0x03, 0x06, 0x07, 0x15}
+
+# Pause after the first touch so the finger can flatten. GetImage succeeds the
+# moment anything touches the glass, which is usually just the tip — an image
+# with too few ridges, reported as 0x07 "too few features".
+SETTLE_S = 0.35
+CAPTURE_TRIES = 6
+RETRY_GAP_S = 0.2
+
+
+def capture_features(dev: ZazReader, buffer_id: int, timeout_s: float = 15.0) -> None:
+    """
+    Wait for a finger, let it settle, and extract features into `buffer_id`.
+
+    One press gets several tries: a frame that yields too few features is
+    simply retaken while the finger is still down, instead of failing the
+    press and making the person start again.
+    """
+    deadline = time.time() + timeout_s
+    wait_for_finger(dev, timeout_s)
+    time.sleep(SETTLE_S)
+
+    last_error: Optional[ZazError] = None
+    for _ in range(CAPTURE_TRIES):
+        code = dev.get_image()
+        if code == 0x02:
+            # Lifted mid-capture. Wait for it to come back down rather than fail.
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                break
+            wait_for_finger(dev, remaining)
+            time.sleep(SETTLE_S)
+            continue
+        if code != 0:
+            last_error = ZazError(code, "Capture image")
+            if code not in RETRYABLE_CAPTURE_CODES:
+                raise last_error
+            time.sleep(RETRY_GAP_S)
+            continue
+        try:
+            dev.gen_char(buffer_id)
+            return
+        except ZazError as err:
+            if err.code not in RETRYABLE_CAPTURE_CODES:
+                raise
+            last_error = err
+            time.sleep(RETRY_GAP_S)
+
+    if last_error is not None:
+        raise last_error
+    raise TimeoutError("Timed out waiting for a finger.")
+
+
 def wait_for_removal(dev: ZazReader, timeout_s: float = 10.0) -> None:
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -126,8 +182,7 @@ def enroll(passes: int = 3) -> dict[str, Any]:
     """Three presses of one finger, merged into a single template."""
     dev = reader()
     for index in range(passes):
-        wait_for_finger(dev)
-        dev.gen_char(BUFFER_A if index == 0 else BUFFER_B)
+        capture_features(dev, BUFFER_A if index == 0 else BUFFER_B)
         if index < passes - 1:
             wait_for_removal(dev)
 
@@ -143,8 +198,7 @@ def enroll(passes: int = 3) -> dict[str, Any]:
 def identify(page_count: int = 1000) -> dict[str, Any]:
     """Capture once and search the on-device library."""
     dev = reader()
-    wait_for_finger(dev)
-    dev.gen_char(BUFFER_A)
+    capture_features(dev, BUFFER_A)
 
     result = dev.high_speed_search(0, page_count, BUFFER_A)
     if result is None:
@@ -205,8 +259,7 @@ def route(path: str, body: dict[str, Any]) -> dict[str, Any]:
 
     if path == "/capture":
         buffer_id = BUFFER_A if int(body.get("buffer", 1)) == 1 else BUFFER_B
-        wait_for_finger(dev, float(body.get("timeout", 20)))
-        dev.gen_char(buffer_id)
+        capture_features(dev, buffer_id, float(body.get("timeout", 20)))
         return {"captured": True, "buffer": buffer_id}
 
     if path == "/wait-removal":
