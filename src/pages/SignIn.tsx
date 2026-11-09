@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Loader2, AlertCircle, ArrowLeft } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { useAuth } from '@/lib/auth-context'
 import { LoadingScreen } from '@/components/ui/LoadingScreen'
@@ -47,9 +47,9 @@ export function SignIn() {
     <div className="flex min-h-dvh">
       {/* Brand panel */}
       <div className="hidden flex-1 flex-col justify-between bg-shell-900 p-12 lg:flex">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3" aria-label="BioAttend home">
           <Logo tone="light" />
-        </div>
+        </Link>
 
         <div className="max-w-md">
           <h1 className="text-3xl font-semibold leading-tight text-white">
@@ -64,13 +64,24 @@ export function SignIn() {
 
         <p className="text-xs text-slate-500">
           Biometric templates are stored as irreversible mathematical
-          representations. No fingerprint or face images are retained.
+          representations. No fingerprint or face images are retained.{' '}
+          <Link to="/privacy" className="text-slate-300 underline underline-offset-2 hover:text-white">
+            Privacy policy
+          </Link>
         </p>
       </div>
 
       {/* Form panel */}
       <div className="flex flex-1 items-center justify-center bg-slate-50 px-6 py-12">
         <div className="w-full max-w-sm">
+          <Link
+            to="/"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-slate-900"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Back to home
+          </Link>
+
           {/* Shown only when the dark brand panel is hidden on narrow screens,
               so this one sits on a light surface and takes the dark treatment. */}
           <div className="mb-8 lg:hidden">

@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from '@/lib/auth-context'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { Landing } from '@/pages/Landing'
+import { Privacy } from '@/pages/Privacy'
+import { Terms } from '@/pages/Terms'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 import { ConsoleLayout } from '@/components/layout/ConsoleLayout'
 import { SignIn } from '@/pages/SignIn'
@@ -18,6 +21,27 @@ import { LiveAttendance } from '@/pages/LiveAttendance'
 import { Exceptions } from '@/pages/Exceptions'
 import { NoAccess } from '@/pages/Placeholder'
 
+/**
+ * `/` is both the public landing page and the console overview.
+ *
+ * A signed-out visitor at `/` sees the landing page. Anyone signed in — and
+ * any signed-out visit to a deeper console route such as /live — goes through
+ * ProtectedRoute exactly as before, so console links and redirects are
+ * unchanged.
+ */
+function ConsoleGate() {
+  const { session, loading } = useAuth()
+  const { pathname } = useLocation()
+
+  if (!loading && !session && pathname === '/') return <Landing />
+
+  return (
+    <ProtectedRoute>
+      <ConsoleLayout />
+    </ProtectedRoute>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -26,6 +50,8 @@ export default function App() {
           {/* Public */}
           <Route path="/sign-in" element={<SignIn />} />
           <Route path="/no-access" element={<NoAccess />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
 
           {/*
             Kiosk lives outside the console entirely — no sidebar, no login,
@@ -37,13 +63,7 @@ export default function App() {
           />
 
           {/* Console — Admin and Supervisor */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <ConsoleLayout />
-              </ProtectedRoute>
-            }
-          >
+          <Route element={<ConsoleGate />}>
             <Route
               index
               element={<Overview />}
