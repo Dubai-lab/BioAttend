@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Fingerprint, Check, Loader2, AlertCircle, RotateCcw } from 'lucide-react'
 import {
   BridgeOfflineError,
-  ReaderError,
   bridge,
+  isPoorPress,
   type EnrollStage,
 } from '@/lib/fingerprint/bridge'
 import { cn } from '@/lib/utils'
@@ -73,7 +73,7 @@ export function FingerCapture({
       setError(
         err instanceof BridgeOfflineError
           ? err.message
-          : err instanceof ReaderError && err.code !== undefined && [0x03, 0x06, 0x07, 0x15].includes(err.code)
+          : isPoorPress(err)
             ? 'This finger did not give a clear print after several tries. Wipe the sensor ' +
               'and the fingertip, warm or slightly moisten a very dry finger, and try again — ' +
               'or enrol a different finger.'

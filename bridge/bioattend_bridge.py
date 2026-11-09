@@ -29,7 +29,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Optional
 
-from zaz import BUFFER_A, BUFFER_B, ZazError, ZazReader
+from zaz import BUFFER_A, BUFFER_B, ZazError, ZazReader, describe
 
 HOST = "127.0.0.1"
 PORT = 8321
@@ -79,15 +79,62 @@ def reader() -> ZazReader:
 # Capture helpers
 # ---------------------------------------------------------------------------
 
+class ReaderUnavailable(RuntimeError):
+    """The reader cannot be used at all — unplugged, or held by another program.
+
+    Distinct from a poor press: the kiosk must never count this as a failed
+    fingerprint attempt, because nobody touched anything.
+    """
+
+
+# Consecutive device errors, with no finger seen, before the reader is
+# declared unavailable rather than merely noisy (~3 s of polling).
+MAX_IDLE_ERRORS = 30
+
+
+def ensure_open(dev: ZazReader) -> None:
+    """
+    Open the reader if it is not already open.
+
+    The reader used to be opened only from the Devices page, so after the
+    bridge restarted — a reboot, a closed window — every scan failed with
+    "device not open" until someone found that page. The kiosk read each of
+    those failures as a bad press and counted attempts with nobody there.
+    """
+    if dev.is_open:
+        return
+    if KNOWN_DEVICE_TYPE is None:
+        raise ReaderUnavailable("The reader has not been set up. Connect it from Devices.")
+    try:
+        dev.open(KNOWN_DEVICE_TYPE)
+    except Exception as err:  # noqa: BLE001
+        raise ReaderUnavailable(
+            "The fingerprint reader is not connected. Check the USB cable, and close "
+            f"fpdemo.exe if it is open. ({err})"
+        ) from err
+
+
 def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0) -> None:
-    """Poll until a finger is present. 0x02 means 'nothing there yet'."""
+    """
+    Poll until a finger is present. 0x02 means 'nothing there yet'.
+
+    Other codes while no finger is down are noise from the device, not a
+    press, so they are polled through. Only a sustained run of them — a reader
+    that has stopped answering — is reported, and as unavailable.
+    """
     deadline = time.time() + timeout_s
+    errors = 0
     while time.time() < deadline:
         code = dev.get_image()
         if code == 0:
             return
-        if code != 0x02:
-            raise ZazError(code, "Capture image")
+        if code == 0x02:
+            errors = 0
+        else:
+            errors += 1
+            if errors >= MAX_IDLE_ERRORS:
+                dev.close()  # reopened automatically on the next request
+                raise ReaderUnavailable(f"The fingerprint reader stopped responding ({describe(code)}).")
         time.sleep(0.1)
     raise TimeoutError("Timed out waiting for a finger.")
 
@@ -249,6 +296,10 @@ def route(path: str, body: dict[str, Any]) -> dict[str, Any]:
         dev.close()
         return {"connected": False}
 
+    # Everything below needs the reader. Open it here rather than relying on
+    # someone having pressed Connect on the Devices page since the last restart.
+    ensure_open(dev)
+
     if path == "/enroll":
         return enroll(int(body.get("passes", 3)))
 
@@ -368,6 +419,8 @@ class Handler(BaseHTTPRequestHandler):
             self._respond(200, result)
         except FileNotFoundError as err:
             self._respond(404, {"error": str(err)})
+        except ReaderUnavailable as err:
+            self._respond(200, {"error": str(err), "unavailable": True})
         except ZazError as err:
             self._respond(200, {"error": str(err), "code": err.code})
         except TimeoutError as err:

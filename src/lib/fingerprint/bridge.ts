@@ -27,16 +27,31 @@ export class ReaderError extends Error {
   constructor(
     message: string,
     readonly code?: number,
+    /** The reader itself cannot be used — unplugged or not responding. No finger was involved. */
+    readonly unavailable = false,
   ) {
     super(message)
     this.name = 'ReaderError'
   }
 }
 
+/**
+ * Reader codes that mean "a finger was pressed, but poorly": could not capture
+ * (0x03), blurred (0x06), too few features (0x07), empty buffer (0x15).
+ * Anything else is the device, not the person.
+ */
+export const POOR_PRESS_CODES = new Set([0x03, 0x06, 0x07, 0x15])
+
+/** True only when a real finger press produced the error. */
+export function isPoorPress(err: unknown): boolean {
+  return err instanceof ReaderError && err.code !== undefined && POOR_PRESS_CODES.has(err.code)
+}
+
 interface BridgeErrorBody {
   error?: string
   code?: number
   timeout?: boolean
+  unavailable?: boolean
 }
 
 async function call<T>(path: string, body?: unknown, timeoutMs = 60000): Promise<T> {
@@ -67,7 +82,7 @@ async function call<T>(path: string, body?: unknown, timeoutMs = 60000): Promise
   // Device-level failures come back as HTTP 200 with an error field, so the
   // caller can tell "no finger" from "service unreachable".
   if (payload.error) {
-    throw new ReaderError(payload.error, payload.code)
+    throw new ReaderError(payload.error, payload.code, payload.unavailable === true)
   }
 
   return payload
@@ -104,12 +119,6 @@ export interface EnrollStage {
   message?: string
 }
 
-/**
- * Reader codes that mean "that press was poor", not "the device failed": could
- * not capture (0x03), blurred (0x06), too few features (0x07), empty buffer
- * (0x15). The press is repeated rather than the whole finger restarted.
- */
-const RETRYABLE_PRESS_CODES = new Set([0x03, 0x06, 0x07, 0x15])
 /** Repeats allowed for any single press before the finger is abandoned. */
 const PRESS_RETRIES = 3
 
@@ -188,12 +197,8 @@ export const bridge = {
           await bridge.capturePass(pass === 1 ? 1 : 2)
           break
         } catch (err) {
-          const retryable =
-            err instanceof ReaderError &&
-            err.code !== undefined &&
-            RETRYABLE_PRESS_CODES.has(err.code)
-          if (!retryable || attempt >= PRESS_RETRIES) throw err
-          onProgress({ kind: 'retry', pass, of: passes, message: err.message })
+          if (!isPoorPress(err) || attempt >= PRESS_RETRIES) throw err
+          onProgress({ kind: 'retry', pass, of: passes, message: (err as ReaderError).message })
           await bridge.waitForRemoval()
         }
       }
