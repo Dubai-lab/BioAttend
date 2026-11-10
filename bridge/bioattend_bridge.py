@@ -336,6 +336,17 @@ def route(path: str, body: dict[str, Any]) -> dict[str, Any]:
         # One-off discovery of the correct nDeviceType for this hardware.
         return {"workingDeviceTypes": dev.probe_device_types()}
 
+    if path == "/connect" and dev.is_open:
+        # Already open — report it rather than reopen. The Devices page asks
+        # on every visit, and the kiosk may be using the reader meanwhile.
+        return {
+            "connected": True,
+            "deviceType": dev.device_type,
+            "diskNumber": dev.disk_number,
+            "templateCount": dev.template_count(),
+            "version": dev.read_version(),
+        }
+
     if path == "/connect":
         device_type = body.get("deviceType", KNOWN_DEVICE_TYPE)
         if device_type is None:

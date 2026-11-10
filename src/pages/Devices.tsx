@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
@@ -30,11 +30,49 @@ export function Devices() {
   const [offline, setOffline] = useState(false)
   const [result, setResult] = useState<EnrollResult | null>(null)
   const [stage, setStage] = useState<EnrollStage | null>(null)
+  // Read by the health poll without re-creating it on every change.
+  const deviceRef = useRef<DeviceStatus | null>(null)
+  deviceRef.current = device
+  const fetchingDevice = useRef(false)
 
+  /**
+   * Ask the bridge what is actually true, rather than remembering what this
+   * page did. The reader stays open in the bridge when you leave this page,
+   * but the page used to forget, show "Connect reader" on every return, and
+   * block template sync — although the reader had been connected all along.
+   */
   const checkBridge = useCallback(async () => {
-    const online = await bridge.isOnline()
-    setBridgeOnline(online)
-    if (!online) setDevice(null)
+    let health
+    try {
+      health = await bridge.health()
+    } catch {
+      setBridgeOnline(false)
+      setDevice(null)
+      return
+    }
+    setBridgeOnline(health.ok)
+
+    if (!health.connected) {
+      setDevice(null)
+      return
+    }
+    // Connected in the bridge. Say so at once — the health check answers
+    // instantly, while the details need the reader itself, which the kiosk
+    // may be holding for a scan for several seconds. Details follow when free.
+    // /connect does not reopen a reader that is already open.
+    if (!deviceRef.current) {
+      setDevice({ connected: true, deviceType: health.deviceType ?? 0, diskNumber: 0, templateCount: -1, version: '' })
+    }
+    if ((deviceRef.current?.templateCount ?? -1) < 0 && !fetchingDevice.current) {
+      fetchingDevice.current = true
+      try {
+        setDevice(await bridge.connect())
+      } catch {
+        /* keep showing connected; details stay pending */
+      } finally {
+        fetchingDevice.current = false
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -258,9 +296,9 @@ export function Devices() {
 
             {device && (
               <dl className="space-y-2 text-sm">
-                <Row label="Enrolled" value={`${device.templateCount}`} />
+                <Row label="Enrolled" value={device.templateCount < 0 ? '…' : `${device.templateCount}`} />
                 <Row label="Transport" value={`USB disk (type ${device.deviceType})`} />
-                <Row label="Module" value={shortVersion(device.version)} />
+                <Row label="Module" value={device.version ? shortVersion(device.version) : '…'} />
               </dl>
             )}
           </section>
