@@ -58,6 +58,17 @@ function isNetworkFailure(message: string): boolean {
   )
 }
 
+/**
+ * Errors that mean the stored login itself is no good, as opposed to the
+ * server being unreachable: an expired or invalid token (PostgREST PGRST301 /
+ * PGRST303, or a "JWT" message).
+ */
+function isDeadSession(error: { code?: string; message?: string }): boolean {
+  const code = error.code ?? ''
+  const message = (error.message ?? '').toLowerCase()
+  return code === 'PGRST301' || code === 'PGRST303' || message.includes('jwt')
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -108,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function loadProfile(userId: string) {
       let result = await fetchProfile(userId)
       for (const delay of [800, 2500]) {
-        if (!result.error) break
+        if (!result.error || isDeadSession(result.error)) break
         console.warn('[auth] profile load failed, retrying:', result.error.message)
         await wait(delay)
         if (!mounted.current) return
@@ -121,6 +132,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastEmptyRefresh.current = Date.now()
         const { error: refreshError } = await supabase.auth.refreshSession()
         if (!refreshError) result = await fetchProfile(userId)
+      }
+
+      // A rejected token is not a network problem: the saved login is dead
+      // (expired and unable to renew, or revoked). Retrying can never fix it,
+      // and showing "cannot reach the server" kept the browser stuck on it.
+      // Try one renewal; if that fails, sign out so the person can sign in.
+      if (result.error && isDeadSession(result.error)) {
+        const { error: refreshError } = await supabase.auth.refreshSession()
+        if (!refreshError) result = await fetchProfile(userId)
+        if (refreshError || (result.error && isDeadSession(result.error))) {
+          console.warn('[auth] saved session is no longer valid — signing out')
+          profileRef.current = null
+          await supabase.auth.signOut({ scope: 'local' })
+          return
+        }
       }
 
       if (!mounted.current) return
