@@ -137,37 +137,38 @@ def dark_fraction(image: bytes) -> float:
     return sum(image.translate(_DARK)) / len(image) if image else 0.0
 
 
-def sense(dev: ZazReader) -> tuple[str, int]:
+def sense(dev: ZazReader) -> tuple[str, int, bytes]:
     """
-    One look at the sensor. Returns ("finger", 0), ("empty", 0) or
-    ("error", code). On "finger" the frame is still in the image buffer,
-    ready for GenChar.
+    One look at the sensor: ("finger", 0, frame), ("empty", 0, b"") or
+    ("error", code, b""). On "finger" the frame is still in the module's
+    image buffer, ready for GenChar. Costs ~0.07 s, plus ~0.11 s to download
+    the frame when the module claims one.
     """
     code = dev.get_image()
     if code == 0x02:
-        return "empty", 0
+        return "empty", 0, b""
     if code != 0:
-        return "error", code
+        return "error", code, b""
     try:
         image = dev.up_image()
     except ZazError as err:
-        return "error", err.code
-    return ("finger", 0) if dark_fraction(image) >= FINGER_DARK_MIN else ("empty", 0)
+        return "error", err.code, b""
+    if dark_fraction(image) >= FINGER_DARK_MIN:
+        return "finger", 0, image
+    return "empty", 0, b""
 
 
-# A finger must be seen in this many consecutive frames before it counts, so
-# one odd frame (a leftover image in the module's buffer) is never a press.
-FINGER_FRAMES = 2
-
-
-def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0, require_clear: bool = True) -> None:
+def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0) -> None:
     """
-    Poll until a real finger is on the sensor.
+    Poll until a real, live finger is on the sensor (~0.4 s once it lands).
 
-    With `require_clear`, the sensor must first be seen EMPTY. A new press is
-    a finger arriving, not one already there: this stops a frame left in the
-    module's buffer — the previous person's finger — or a finger that never
-    lifted from being read as a fresh press.
+    A finger counts when two consecutive frames are both dark enough AND not
+    byte-identical. A live finger always differs a little between frames
+    (sensor noise, pressure); a frame left over in the module's buffer — the
+    previous person — comes back identical, and is ignored.
+
+    The frame that confirms the finger is left in the image buffer, so the
+    caller extracts features from it straight away — no second photograph.
 
     Blank frames and stray device codes while nobody is there are polled
     through. Only a sustained run of errors — a reader that has stopped
@@ -175,22 +176,18 @@ def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0, require_clear: bool
     """
     deadline = time.time() + timeout_s
     errors = 0
-    seen_empty = not require_clear
-    streak = 0
+    previous = b""
     while time.time() < deadline:
-        state, code = sense(dev)
-        if state == "finger" and seen_empty:
-            streak += 1
-            if streak >= FINGER_FRAMES:
+        state, code, frame = sense(dev)
+        if state == "finger":
+            errors = 0
+            if previous and frame != previous:
                 return
-            time.sleep(0.05)
-            continue
-        streak = 0
+            previous = frame
+            continue  # look again at once
+        previous = b""
         if state == "empty":
             errors = 0
-            seen_empty = True
-        elif state == "finger":
-            errors = 0  # present but not yet cleared since the last press
         else:
             errors += 1
             if errors >= MAX_IDLE_ERRORS:
@@ -201,56 +198,42 @@ def wait_for_finger(dev: ZazReader, timeout_s: float = 15.0, require_clear: bool
 
 
 # Codes that describe a poor image rather than a broken device: the finger
-# was only half down, moving, smudged or dry. Retaking the image while the
-# finger stays on the sensor usually clears them.
+# was moving, smudged or dry. Retaking the image while the finger stays on the
+# sensor sometimes clears them.
 RETRYABLE_CAPTURE_CODES = {0x03, 0x06, 0x07, 0x15}
 
-# Pause after the first touch so the finger can flatten. GetImage succeeds the
-# moment anything touches the glass, which is usually just the tip — an image
-# with too few ridges, reported as 0x07 "too few features".
-SETTLE_S = 0.35
-CAPTURE_TRIES = 6
-RETRY_GAP_S = 0.2
+# Total feature extractions per press. Measured: GenChar takes ~0.7 s with a
+# finger and ~1.75 s when it fails, so each extra try costs real waiting time.
+# An earlier version allowed six — up to ~12 s of "scanning" on a poor press.
+CAPTURE_TRIES = 2
 
 
 def capture_features(dev: ZazReader, buffer_id: int, timeout_s: float = 15.0) -> None:
     """
-    Wait for a finger, let it settle, and extract features into `buffer_id`.
+    Wait for a finger and extract its features into `buffer_id`.
 
-    One press gets several tries: a frame that yields too few features is
-    simply retaken while the finger is still down, instead of failing the
-    press and making the person start again.
+    Typical cost once the finger lands: ~0.4 s to confirm it, ~0.7 s to
+    extract. A poor frame is retaken once while the finger is still down; if
+    that fails too the press is reported, and the person presses again.
     """
     deadline = time.time() + timeout_s
     wait_for_finger(dev, timeout_s)
-    time.sleep(SETTLE_S)
 
     last_error: Optional[ZazError] = None
-    for _ in range(CAPTURE_TRIES):
-        state, code = sense(dev)
-        if state == "empty":
-            # Lifted mid-capture, or a blank frame. Wait for a real finger
-            # rather than fail — a blank frame is never anyone's press.
+    for attempt in range(CAPTURE_TRIES):
+        if attempt > 0:
+            # Retake. The finger may have lifted in the meantime: wait for it.
             remaining = deadline - time.time()
             if remaining <= 0:
                 break
-            wait_for_finger(dev, remaining, require_clear=False)  # it was just seen empty
-            time.sleep(SETTLE_S)
-            continue
-        if state == "error":
-            last_error = ZazError(code, "Capture image")
-            if code not in RETRYABLE_CAPTURE_CODES:
-                raise last_error
-            time.sleep(RETRY_GAP_S)
-            continue
+            wait_for_finger(dev, remaining)
         try:
-            dev.gen_char(buffer_id)
+            dev.gen_char(buffer_id)  # the confirmed frame is still in the buffer
             return
         except ZazError as err:
             if err.code not in RETRYABLE_CAPTURE_CODES:
                 raise
             last_error = err
-            time.sleep(RETRY_GAP_S)
 
     if last_error is not None:
         raise last_error
@@ -263,7 +246,7 @@ def wait_for_removal(dev: ZazReader, timeout_s: float = 10.0) -> None:
     while time.time() < deadline:
         if sense(dev)[0] == "empty":
             return
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 
 def estimate_quality(template: bytes) -> int:
