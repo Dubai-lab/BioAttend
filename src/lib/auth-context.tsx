@@ -24,6 +24,14 @@ interface AuthState {
    * between signing in and the profile resolving.
    */
   profileReady: boolean
+  /**
+   * True when the profile could not be fetched at all (network, server) and
+   * there is no earlier copy to fall back on. Distinct from "has no profile":
+   * the person is not refused, the server simply could not be asked.
+   */
+  profileError: boolean
+  /** Fetch the profile again — used by the retry buttons. */
+  reloadProfile: () => Promise<void>
   isAdmin: boolean
   isSupervisor: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
@@ -60,35 +68,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // is trustworthy yet.
   const [profileLoadedFor, setProfileLoadedFor] = useState<string | null>(null)
 
+  const [profileError, setProfileError] = useState(false)
+
   // Guards every setState against a unmounted component and against a stale
   // response from a previous session overwriting the current one.
   const mounted = useRef(true)
+  // The profile currently held, readable inside async loaders without
+  // re-creating them on every change.
+  const profileRef = useRef<Profile | null>(null)
+  const loadProfileRef = useRef<(userId: string) => Promise<void>>(async () => {})
+  const lastEmptyRefresh = useRef(0)
 
   useEffect(() => {
     mounted.current = true
 
-    async function loadProfile(userId: string) {
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+    async function fetchProfile(userId: string) {
       // maybeSingle(), never single(): a missing profile row is a legitimate
       // state (invited but not yet provisioned) and must not throw.
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
+      return supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    }
+
+    /**
+     * Load the signed-in user's profile without ever mistaking a hiccup for
+     * "no access".
+     *
+     * The profile is re-read every time the session refreshes — hourly, and
+     * whenever the PC wakes or the network returns. Previously one failed or
+     * empty read set the profile to null, and the console sent a perfectly
+     * valid administrator to "No console access" and left them there.
+     *
+     *   - A failed request is retried; if it still fails, the profile already
+     *     held for this user is kept.
+     *   - An empty result can be a request sent with a token that had just
+     *     expired (row-level security then hides the row). The session is
+     *     refreshed and the read repeated before "no profile" is believed.
+     */
+    async function loadProfile(userId: string) {
+      let result = await fetchProfile(userId)
+      for (const delay of [800, 2500]) {
+        if (!result.error) break
+        console.warn('[auth] profile load failed, retrying:', result.error.message)
+        await wait(delay)
+        if (!mounted.current) return
+        result = await fetchProfile(userId)
+      }
+
+      // At most once a minute: the refresh itself fires another auth event and
+      // another load, which for someone who truly has no profile must not loop.
+      if (!result.error && !result.data && Date.now() - lastEmptyRefresh.current > 60_000) {
+        lastEmptyRefresh.current = Date.now()
+        const { error: refreshError } = await supabase.auth.refreshSession()
+        if (!refreshError) result = await fetchProfile(userId)
+      }
 
       if (!mounted.current) return
+      const held = profileRef.current?.id === userId ? profileRef.current : null
 
-      if (error) {
-        console.error('[auth] profile load failed:', error.message)
-        setProfile(null)
+      if (result.error) {
+        console.error('[auth] profile load failed:', result.error.message)
+        // Keep what we had. Only with nothing to fall back on is it an error.
+        profileRef.current = held
+        setProfile(held)
+        setProfileError(!held)
       } else {
-        setProfile(data)
+        profileRef.current = result.data
+        setProfile(result.data)
+        setProfileError(false)
       }
 
       // Mark resolved either way — a failed fetch must not leave the app
       // spinning forever.
       setProfileLoadedFor(userId)
     }
+    loadProfileRef.current = loadProfile
 
     // 1. Restore any existing session on first paint.
     supabase.auth
@@ -116,8 +170,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession)
 
       if (event === 'SIGNED_OUT' || !nextSession?.user) {
+        profileRef.current = null
         setProfile(null)
         setProfileLoadedFor(null)
+        setProfileError(false)
         setLoading(false)
         return
       }
@@ -142,6 +198,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       profileReady: !session?.user || profileLoadedFor === session.user.id,
+      profileError,
+      async reloadProfile() {
+        const { data } = await supabase.auth.getSession()
+        if (data.session?.user) await loadProfileRef.current(data.session.user.id)
+      },
       isAdmin: profile?.role === 'admin',
       isSupervisor: profile?.role === 'supervisor',
 
@@ -166,13 +227,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signOut() {
         // Clear local state first so the UI never shows a signed-out user
         // still holding their old profile while the network call settles.
+        profileRef.current = null
         setProfile(null)
         setProfileLoadedFor(null)
+        setProfileError(false)
         setSession(null)
         await supabase.auth.signOut()
       },
     }),
-    [session, profile, loading, profileLoadedFor],
+    [session, profile, loading, profileLoadedFor, profileError],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

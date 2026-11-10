@@ -283,6 +283,27 @@ class ZazReader:
         """Capture one frame. Returns the raw code — 0x02 means no finger yet."""
         return self.ZAZGetImage(self._ctx, addr)
 
+    def up_image(self, addr: int = DEFAULT_ADDR) -> bytes:
+        """
+        Download the last captured image (256 x 288, one byte per pixel, 0 = dark).
+
+        Needed because this module answers GetImage with success for an EMPTY
+        sensor after it powers up, returning a blank white frame. The only
+        reliable way to know a finger is really there is to look at the frame.
+        Uploading leaves the image buffer intact, so GenChar can follow.
+        """
+        buf = (ctypes.c_ubyte * IMAGE_BUFFER_SIZE)()
+        length = ctypes.c_int(IMAGE_BUFFER_SIZE)
+        code = self.ZAZUpImage(
+            self._ctx,
+            addr,
+            ctypes.cast(buf, ctypes.POINTER(ctypes.c_ubyte)),
+            ctypes.byref(length),
+        )
+        self._check(code, "Upload image")
+        size = length.value if 0 < length.value <= IMAGE_BUFFER_SIZE else IMAGE_BUFFER_SIZE
+        return bytes(buf[:size])
+
     def gen_char(self, buffer_id: int, addr: int = DEFAULT_ADDR) -> None:
         self._check(self.ZAZGenChar(self._ctx, addr, buffer_id), "Extract features")
 
